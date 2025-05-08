@@ -22,7 +22,10 @@ export class PostsService {
   }
 
   findAll(): Post[] {
-    return this.posts;
+    if(this.posts.length === 0)
+      throw new NotFoundException(`Error! There are no posts`)
+
+    return this.posts
   }
 
   findOne(id: number): Post {
@@ -31,14 +34,15 @@ export class PostsService {
 
   update(id: number, dto: UpdatePostDto): Post {
     const post = this.findPostById(id);
-    const { title, content } = dto;
+    const { title } = dto;
 
-    Object.assign(post, { title, content });
+    Object.assign(post, { title });
 
     return post;
   }
 
   remove(id: number): void {
+    this.findPostById(id);
     this.posts = this.posts.filter((post) => post.id !== id);
   }
 
