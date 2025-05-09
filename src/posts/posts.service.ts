@@ -22,9 +22,6 @@ export class PostsService {
   }
 
   findAll(): Post[] {
-    if(this.posts.length === 0)
-      throw new NotFoundException(`Error! There are no posts`)
-
     return this.posts
   }
 

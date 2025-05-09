@@ -46,7 +46,6 @@ export class PostsController {
     description: 'Return posts array'
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'posts returned '})
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'there are no posts'})
   @Get()
   findAll() {
     return this.postsService.findAll();
@@ -78,7 +77,7 @@ export class PostsController {
     summary: 'Delete the post',
     description: 'Delete the post, do not return anything'
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'post returned '})
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'post deleted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @Delete(':id')
   remove(@Param('id') id: string) {
