@@ -10,6 +10,7 @@ export class CreatePostDto {
     @IsString()
     @IsNotEmpty()
     title: string;
+    
     @ApiProperty({
         description:'content',
         type: Object,
@@ -17,6 +18,7 @@ export class CreatePostDto {
     })
     @IsNotEmpty()
     content: any;
+    
     @ApiProperty({
         description:'author',
         type: Object,

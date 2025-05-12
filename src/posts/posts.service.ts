@@ -31,9 +31,8 @@ export class PostsService {
 
   update(id: number, dto: UpdatePostDto): Post {
     const post = this.findPostById(id);
-    const { title } = dto;
 
-    Object.assign(post, { title });
+    Object.assign(post, dto);
 
     return post;
   }
