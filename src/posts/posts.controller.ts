@@ -5,6 +5,10 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Posts')
+@ApiResponse({
+  status: HttpStatus.INTERNAL_SERVER_ERROR,
+  description: 'Internal server error',
+})
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
