@@ -1,62 +1,63 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Post } from './entities/post.entity';
+import { PostEntity } from './entities/post.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class PostsService {
-  private posts: Post[] = [];
-  private nextId: number = 1;
+  constructor(
+    @InjectRepository(PostEntity)
+    private postsRepository: Repository<PostEntity>,
+  ){}
 
-  create(post: CreatePostDto): Post {
-    const newPost: Post = {
+  async create(post: CreatePostDto): Promise<PostEntity> {
+    const newPost: PostEntity = this.postsRepository.create({
       ...post,
-      id: this.nextId++,
       publishDate: new Date(),
       likes: 0,
       dislikes: 0,
-    };
+    });
 
-    this.posts.push(newPost);
-    return newPost;
+    return this.postsRepository.save(newPost);
   }
 
-  findAll(): Post[] {
-    return this.posts
+  async findAll(): Promise<PostEntity[]> {
+    return this.postsRepository.find();
   }
 
-  findOne(id: number): Post {
+  async findOne(id: number): Promise<PostEntity> {
     return this.findPostById(id);
   }
 
-  update(id: number, dto: UpdatePostDto): Post {
-    const post = this.findPostById(id);
+  async update(id: number, dto: UpdatePostDto): Promise<PostEntity> {
+    const post = await this.findPostById(id);
 
     Object.assign(post, dto);
 
-    return post;
+    return this.postsRepository.save(post);
   }
 
-  remove(id: number): void {
-    this.findPostById(id);
-    this.posts = this.posts.filter((post) => post.id !== id);
+  async remove(id: number): Promise<void> {
+    const post = await this.findPostById(id);
+    await this.postsRepository.remove(post)
   }
 
-  like(id: number): Post {
-    const post = this.findPostById(id);
+  async like(id: number): Promise<PostEntity> {
+    const post = await this.findPostById(id);
     post.likes += 1;
-    return post;
+    return this.postsRepository.save(post);
   }
 
-  dislike(id: number): Post {
-    const post = this.findPostById(id);
+  async dislike(id: number): Promise<PostEntity> {
+    const post = await this.findPostById(id);
     post.dislikes += 1;
-    return post;
+    return this.postsRepository.save(post);
   }
 
-
-  private findPostById(id: number) {
-    const post = this.posts.find(post => post.id === id);
+  private async findPostById(id: number): Promise<PostEntity> {
+    const post = await this.postsRepository.findOne({ where: { id }})
     
     if (!post) throw new NotFoundException(`Error! There is no post with id: ${id}`);
 

@@ -1,9 +1,26 @@
-export class Post {
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+
+@Entity()
+export class PostEntity {
+    @PrimaryGeneratedColumn()
     id: number;
+
+    @Column()
     title: string;
-    content: any;
+
+    @Column('jsonb') 
+    content: Record<string, any>; 
+
+    @Column({ type: 'timestamp' })
     publishDate: Date;
-    author: any;
+
+    //TODO add link to the User entity 
+    @Column({ type: 'jsonb' })
+    author: Record<string, any>;
+
+    @Column()
     likes: number;
+
+    @Column()
     dislikes: number;
 }
