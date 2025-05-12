@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -19,6 +19,7 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'post created'})
   @Post()
+  @HttpCode(201)
   create(@Body() createPostDto: CreatePostDto) {
     return this.postsService.create(createPostDto);
   }
@@ -84,6 +85,7 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'post deleted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @Delete(':id')
+  @HttpCode(204)
   remove(@Param('id') id: string) {
     return this.postsService.remove(+id);
   }
