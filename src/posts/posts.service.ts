@@ -29,26 +29,30 @@ export class PostsService {
   async update(id: number, dto: UpdatePostDto): Promise<PostEntity> {
     const post = await this.findPostById(id);
 
-    Object.assign(post, dto);
+    this.postsRepository.merge(post, dto);
 
     return this.postsRepository.save(post);
   }
 
   async remove(id: number): Promise<void> {
     const post = await this.findPostById(id);
-    await this.postsRepository.remove(post)
+    this.postsRepository.remove(post)
   }
 
   async like(id: number): Promise<PostEntity> {
-    const post = await this.findPostById(id);
-    post.likes += 1;
-    return this.postsRepository.save(post);
+    await this.findPostById(id);
+
+    await this.postsRepository.increment({ id }, 'likes', 1)
+
+    return this.findPostById(id);
   }
 
   async dislike(id: number): Promise<PostEntity> {
-    const post = await this.findPostById(id);
-    post.dislikes += 1;
-    return this.postsRepository.save(post);
+    await this.findPostById(id);
+
+    await this.postsRepository.decrement({ id }, 'dislikes', 1)
+
+    return this.findPostById(id);
   }
 
   private async findPostById(id: number): Promise<PostEntity> {
