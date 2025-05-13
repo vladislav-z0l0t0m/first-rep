@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class PostEntity {
@@ -11,6 +11,7 @@ export class PostEntity {
     @Column('jsonb') 
     content: Record<string, any>; 
 
+    //TODO delete this field or implement logic(draft post => createdAt != publishDate)
     @Column({ type: 'timestamp' })
     publishDate: Date;
 
@@ -23,4 +24,10 @@ export class PostEntity {
 
     @Column()
     dislikes: number;
+
+    @CreateDateColumn({ type: 'timestamp' })
+    createdAt: Date;
+
+    @UpdateDateColumn({ type: 'timestamp' })
+    updatedAt : Date;
 }
