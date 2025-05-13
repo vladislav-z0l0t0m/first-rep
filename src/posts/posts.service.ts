@@ -13,12 +13,7 @@ export class PostsService {
   ){}
 
   async create(post: CreatePostDto): Promise<PostEntity> {
-    const newPost: PostEntity = this.postsRepository.create({
-      ...post,
-      publishDate: new Date(),
-      likes: 0,
-      dislikes: 0,
-    });
+    const newPost: PostEntity = this.postsRepository.create(post);
 
     return this.postsRepository.save(newPost);
   }
