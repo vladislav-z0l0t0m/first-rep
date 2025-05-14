@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PostEntity } from './entities/post.entity';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 
@@ -32,6 +32,7 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'like setted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Post(':id/like')
   like(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.like(id);
@@ -43,6 +44,7 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'dislike setted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Post(':id/dislike')
   dislike(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.dislike(id);
@@ -64,6 +66,7 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'post returned '})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Get(':id')
   findOne(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.findOne(id);
@@ -75,6 +78,7 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'post returned '})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Patch(':id')
   update(@Param() { id }: ParamsIdDto, @Body() updatePostDto: UpdatePostDto): Promise<PostEntity> {
     return this.postsService.update(id, updatePostDto);
@@ -86,6 +90,7 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'post deleted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Delete(':id')
   @HttpCode(204)
   remove(@Param() { id }: ParamsIdDto): Promise<void> {
