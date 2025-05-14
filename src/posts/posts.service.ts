@@ -36,7 +36,7 @@ export class PostsService {
 
   async remove(id: number): Promise<void> {
     const post = await this.findPostById(id);
-    this.postsRepository.remove(post)
+    await this.postsRepository.remove(post)
   }
 
   async like(id: number): Promise<PostEntity> {
@@ -50,7 +50,7 @@ export class PostsService {
   async dislike(id: number): Promise<PostEntity> {
     await this.findPostById(id);
 
-    await this.postsRepository.decrement({ id }, 'dislikes', 1)
+    await this.postsRepository.increment({ id }, 'dislikes', 1)
 
     return this.findPostById(id);
   }
