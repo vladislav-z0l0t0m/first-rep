@@ -24,7 +24,6 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.CREATED, description: 'post created'})
   @Auth()
   @Post()
-  @HttpCode(201)
   create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
     return this.postsService.create(createPostDto);
   }
@@ -37,6 +36,7 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
+  @HttpCode(200)
   @Post(':id/like')
   like(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.like(id);
@@ -50,6 +50,7 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
+  @HttpCode(200)
   @Post(':id/dislike')
   dislike(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.dislike(id);
@@ -81,7 +82,7 @@ export class PostsController {
     summary: 'Update the post',
     description: 'Update and return post'
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'post returned '})
+  @ApiResponse({ status: HttpStatus.OK, description: 'post updated'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
