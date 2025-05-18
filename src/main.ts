@@ -22,6 +22,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Nest learn API')
     .setDescription('API doc for Instagram')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config)

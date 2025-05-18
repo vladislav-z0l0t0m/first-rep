@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode, UseGuards } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PostEntity } from './entities/post.entity';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -20,6 +21,8 @@ export class PostsController {
     description: 'Create post and return it'
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'post created'})
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post()
   @HttpCode(201)
   create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
@@ -33,6 +36,8 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'like setted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post(':id/like')
   like(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.like(id);
@@ -45,6 +50,8 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'dislike setted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post(':id/dislike')
   dislike(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.dislike(id);
@@ -79,6 +86,8 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'post returned '})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Patch(':id')
   update(@Param() { id }: ParamsIdDto, @Body() updatePostDto: UpdatePostDto): Promise<PostEntity> {
     return this.postsService.update(id, updatePostDto);
@@ -91,6 +100,8 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'post deleted'})
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'post with the specified ID was not found'})
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Delete(':id')
   @HttpCode(204)
   remove(@Param() { id }: ParamsIdDto): Promise<void> {
