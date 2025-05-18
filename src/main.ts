@@ -7,14 +7,14 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,          
-      forbidNonWhitelisted: true, 
+      whitelist: true,
+      forbidNonWhitelisted: true,
       transform: true,
     }),
   );
@@ -25,10 +25,13 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, config)
+  const document = SwaggerModule.createDocument(app, config);
 
   SwaggerModule.setup('/swager', app, document);
-  
+
   await app.listen(port);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Bootstrap failed', err);
+  process.exit(1);
+});
