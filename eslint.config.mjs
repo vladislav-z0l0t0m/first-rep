@@ -4,6 +4,8 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import eslintPluginUnusedImports from 'eslint-plugin-unused-imports';
+import * as eslintPluginImport from 'eslint-plugin-import';
+import * as eslintPluginSonarjs from 'eslint-plugin-sonarjs';
 
 export default tseslint.config(
   {
@@ -33,7 +35,9 @@ export default tseslint.config(
       },
     },
     plugins: {
-      unusedImports: eslintPluginUnusedImports,
+      import: eslintPluginImport,
+      'unused-imports': eslintPluginUnusedImports,
+      sonarjs: eslintPluginSonarjs,
     },
     rules: {
       'unused-imports/no-unused-imports': 'error',
