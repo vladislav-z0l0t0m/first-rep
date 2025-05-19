@@ -4,6 +4,7 @@ import {
   Body,
   UnauthorizedException,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOkResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -23,6 +24,7 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Authorization failed',
   })
+  @HttpCode(200)
   @Post('login')
   login(@Body() body: LoginDto): LoginResponseDto {
     const user = this.authService.validateUser(body.email, body.password);

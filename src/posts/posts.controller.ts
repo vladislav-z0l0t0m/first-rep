@@ -27,10 +27,14 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @ApiOperation({
-    summary: 'Create a post',
-    description: 'Create post and return it',
+    summary: 'Create post',
+    description: 'Create a new post and return it',
   })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'post created' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Post created' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Validation error',
+  })
   @Auth()
   @Post()
   create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
@@ -38,34 +42,28 @@ export class PostsController {
   }
 
   @ApiOperation({
-    summary: 'Add like to the post',
-    description: 'Set like and return post',
+    summary: 'Like post',
+    description: 'Set a like on the post and return the updated post',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'like setted' })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'post with the specified ID was not found',
-  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Like added' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @Post(':id/like')
   like(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.like(id);
   }
 
   @ApiOperation({
-    summary: 'Add dislike to the post',
-    description: 'Set dislike and return post',
+    summary: 'Dislike post',
+    description: 'Set a dislike on the post and return the updated post',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'dislike setted' })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'post with the specified ID was not found',
-  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Dislike added' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @Post(':id/dislike')
   dislike(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
     return this.postsService.dislike(id);
@@ -73,23 +71,20 @@ export class PostsController {
 
   @ApiOperation({
     summary: 'Get all posts',
-    description: 'Return posts array',
+    description: 'Return array of all posts',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'posts returned ' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Posts returned' })
   @Get()
   findAll(): Promise<PostEntity[]> {
     return this.postsService.findAll();
   }
 
   @ApiOperation({
-    summary: 'Get the post',
-    description: 'Return post',
+    summary: 'Get single post',
+    description: 'Return one post by its ID',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'post returned ' })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'post with the specified ID was not found',
-  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Post returned' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Get(':id')
   findOne(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
@@ -97,14 +92,11 @@ export class PostsController {
   }
 
   @ApiOperation({
-    summary: 'Update the post',
-    description: 'Update and return post',
+    summary: 'Update post',
+    description: 'Update the post with given ID and return it',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'post updated' })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'post with the specified ID was not found',
-  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Post updated' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
   @Patch(':id')
@@ -116,18 +108,15 @@ export class PostsController {
   }
 
   @ApiOperation({
-    summary: 'Delete the post',
-    description: 'Delete the post, do not return anything',
+    summary: 'Delete post',
+    description: 'Delete the post with the given ID',
   })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'post deleted' })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'post with the specified ID was not found',
-  })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Post deleted' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  @HttpCode(204)
   remove(@Param() { id }: ParamsIdDto): Promise<void> {
     return this.postsService.remove(id);
   }
