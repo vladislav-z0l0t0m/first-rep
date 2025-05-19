@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -14,6 +15,7 @@ export class UpdateUserDto {
     example: 'Mikle_Jordan',
   })
   @IsString()
+  @IsOptional()
   @IsNotEmpty()
   @MaxLength(30)
   @MinLength(3)
@@ -24,6 +26,7 @@ export class UpdateUserDto {
     example: 'jordan@mail.ru',
   })
   @IsEmail()
+  @IsOptional()
   @IsNotEmpty()
   @MaxLength(255)
   @MinLength(5)
@@ -36,8 +39,7 @@ export class UpdateUserDto {
   @Matches(/^\+\d{10,15}$/, {
     message: 'Number must be in correct format',
   })
+  @IsOptional()
   @IsNotEmpty()
-  @MaxLength(15)
-  @MinLength(10)
   phone?: string;
 }
