@@ -21,6 +21,7 @@ import {
   ApiNotFoundResponse,
   ApiInternalServerErrorResponse,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { UserResponseDto } from './dto/user-response.dto';
 
@@ -84,8 +85,9 @@ export class UserController {
     description: 'Password updated',
     type: UserResponseDto,
   })
-  @ApiNotFoundResponse({ description: 'User not found' })
   @ApiBadRequestResponse({ description: 'Validation error' })
+  @ApiForbiddenResponse({ description: 'Invalid old password' })
+  @ApiNotFoundResponse({ description: 'User not found' })
   updatePassword(
     @Param() { id }: ParamsIdDto,
     @Body() updatePasswordDto: UpdatePasswordDto,

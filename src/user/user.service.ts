@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,19 +13,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { HashingService } from 'src/common/services/hashing.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly hashingService: HashingService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const { email, phone, username } = createUserDto;
+    const { email, phone, username, password } = createUserDto;
+    const hashedPassword = await this.hashingService.hash(password);
+
     await this.validateUniqueFields(email, phone, username);
 
-    const newUser = this.userRepository.create(createUserDto);
+    const newUser = this.userRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
     const savedUser = await this.userRepository.save(newUser);
     return this.mapToDto(savedUser);
   }
@@ -56,13 +65,27 @@ export class UserService {
     id: number,
     updatePasswordDto: UpdatePasswordDto,
   ): Promise<void> {
-    await this.findUserById(id);
+    const user = await this.findUserById(id);
 
-    //TODO: implement hash for password
+    const isOldPasswordCorrect = await this.hashingService.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
 
-    await this.userRepository.update(id, {
-      password: updatePasswordDto.password,
-    });
+    if (!isOldPasswordCorrect) {
+      throw new ForbiddenException('Invalid old password.');
+    }
+
+    if (updatePasswordDto.oldPassword === updatePasswordDto.newPassword) {
+      throw new BadRequestException(
+        'New password cannot be the same as the old password.',
+      );
+    }
+
+    user.password = await this.hashingService.hash(
+      updatePasswordDto.newPassword,
+    );
+    await this.userRepository.save(user);
   }
 
   async remove(id: number): Promise<UserResponseDto> {
