@@ -1,32 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { UserService } from 'src/user/user.service';
+import { HashingService } from 'src/common/services/hashing.service';
+import { User } from 'src/user/entities/user.entity';
+import { IdentifierType } from '../common/constants/identifier-type.enum';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private usersService: UserService,
+    private passwordService: HashingService,
+  ) {}
 
-  validateUser(email: string, password: string) {
-    //TODO: implement logic to get user data from userService and verify it
-    if (email === 'test@example.com' && password === '4444') {
-      return { id: 1, email };
-    }
-    return null;
+  async validateUser(
+    identifier: string,
+    type: IdentifierType,
+    password: string,
+  ): Promise<User> {
+    const user = await this.usersService.findByField(type, identifier);
+
+    const isPasswordValid = await this.passwordService.compare(
+      password,
+      user.password,
+    );
+
+    if (!isPasswordValid) throw new UnauthorizedException('Invalid password');
+
+    return user;
   }
 
-  login(user: any): LoginResponseDto {
-    // eslint-disable-next-line
+  login(user: User): LoginResponseDto {
     const payload = { email: user.email, sub: user.id };
     const access_token = this.jwtService.sign(payload);
 
+    const userDto: UserDto = {
+      id: user.id,
+      email: user.email,
+    };
+
     return {
       access_token,
-
-      user: {
-        // eslint-disable-next-line
-        id: user.id, // eslint-disable-next-line
-        email: user.email,
-      },
+      user: userDto,
     };
   }
 }

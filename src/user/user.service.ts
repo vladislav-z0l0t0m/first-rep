@@ -14,6 +14,7 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { HashingService } from 'src/common/services/hashing.service';
+import { IdentifierType } from 'src/common/constants/identifier-type.enum';
 
 @Injectable()
 export class UserService {
@@ -102,37 +103,22 @@ export class UserService {
     return user;
   }
 
-  private async checkEmailUnique(
-    email: string,
+  private async checkUnique(
+    field: 'email' | 'phone' | 'username',
+    value: string,
     excludeId?: number,
   ): Promise<void> {
-    const where = excludeId ? { email, id: Not(excludeId) } : { email };
+    const where = excludeId
+      ? { [field]: value, id: Not(excludeId) }
+      : { [field]: value };
+
     const existing = await this.userRepository.findOneBy(where);
 
-    if (existing)
-      throw new ConflictException(`Email '${email}' is already in use`);
-  }
-
-  private async checkPhoneUnique(
-    phone: string,
-    excludeId?: number,
-  ): Promise<void> {
-    const where = excludeId ? { phone, id: Not(excludeId) } : { phone };
-    const existing = await this.userRepository.findOneBy(where);
-
-    if (existing)
-      throw new ConflictException(`Phone '${phone}' is already in use`);
-  }
-
-  private async checkUsernameUnique(
-    username: string,
-    excludeId?: number,
-  ): Promise<void> {
-    const where = excludeId ? { username, id: Not(excludeId) } : { username };
-    const existing = await this.userRepository.findOneBy(where);
-
-    if (existing)
-      throw new ConflictException(`Username '${username}' is already in use`);
+    if (existing) {
+      throw new ConflictException(
+        `${field.charAt(0).toUpperCase() + field.slice(1)} '${value}' is already in use`,
+      );
+    }
   }
 
   private async validateUniqueFields(
@@ -145,15 +131,15 @@ export class UserService {
 
     if (email) {
       const excludeId = currentUser ? currentUser.id : undefined;
-      checks.push(this.checkEmailUnique(email, excludeId));
+      checks.push(this.checkUnique('email', email, excludeId));
     }
     if (phone) {
       const excludeId = currentUser ? currentUser.id : undefined;
-      checks.push(this.checkPhoneUnique(phone, excludeId));
+      checks.push(this.checkUnique('phone', phone, excludeId));
     }
     if (username) {
       const excludeId = currentUser ? currentUser.id : undefined;
-      checks.push(this.checkUsernameUnique(username, excludeId));
+      checks.push(this.checkUnique('username', username, excludeId));
     }
 
     await Promise.all(checks);
@@ -167,5 +153,15 @@ export class UserService {
 
   private mapToDtos(entities: User[]): UserResponseDto[] {
     return entities.map((entity) => this.mapToDto(entity));
+  }
+
+  async findByField(field: IdentifierType, value: string): Promise<User> {
+    const user = await this.userRepository.findOneBy({ [field]: value });
+
+    if (!user) {
+      throw new NotFoundException(`User with ${field}: ${value} not found`);
+    }
+
+    return user;
   }
 }
