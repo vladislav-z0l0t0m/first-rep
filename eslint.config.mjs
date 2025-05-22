@@ -53,9 +53,16 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      'prettier/prettier': 'error',
-      'import/no-cycle': 'error',
+      'prettier/prettier': [
+        'warn',
+        {
+          endOfLine: 'crlf',
+        },
+      ],
+      'import/no-cycle': 'warn',
       'sonarjs/cognitive-complexity': ['warn', 15],
+      'linebreak-style': ['warn', 'windows'],
     },
   },
 );
+

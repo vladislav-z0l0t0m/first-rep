@@ -4,5 +4,7 @@
   },
   "eslint.validate": ["javascript", "typescript", "typescriptreact"],
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.eol": "\r\n"
 }
+

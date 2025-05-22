@@ -101,6 +101,7 @@
     "*.{js,ts}": [
       "eslint --fix",
       "prettier --write",
+      "grep -L 'console\\.' || (echo '🚫 console statement found!' && exit 1)",
       "git add"
     ]
   }
