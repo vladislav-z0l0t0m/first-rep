@@ -11,6 +11,7 @@ import { User } from 'src/user/entities/user.entity';
 import { IdentifierType } from '../common/constants/identifier-type.enum';
 import { UserDto } from './dto/user.dto';
 import { GoogleUserPayload } from './dto/google-user.payload';
+import { FacebookUserPayload } from './dto/facebook-user.payload';
 
 @Injectable()
 export class AuthService {
@@ -58,17 +59,19 @@ export class AuthService {
     };
   }
 
-  async googleLogin(
-    googlePayload: GoogleUserPayload,
+  async handleOAuthLogin(
+    oauthPayload: GoogleUserPayload | FacebookUserPayload,
   ): Promise<LoginResponseDto> {
-    if (!googlePayload || !googlePayload.email) {
+    if (!oauthPayload || !oauthPayload.email) {
       throw new UnauthorizedException(
-        'Insufficient information from Google provider.',
+        'Insufficient information from Oauth provider.',
       );
     }
 
-    const user =
-      await this.usersService.findOrCreateUserByGoogle(googlePayload);
+    const user = await this.usersService.findOrCreateUserByOauth(
+      oauthPayload.email,
+      oauthPayload.provider,
+    );
 
     const payload = { email: user.email, sub: user.id };
     return {

@@ -9,6 +9,7 @@ import { UserModule } from 'src/user/user.module';
 import { CommonModule } from 'src/common/common.module';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { FacebookStrategy } from './strategies/facebook.strategy';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     AuthService,
     JwtStrategy,
     GoogleStrategy,
+    FacebookStrategy,
     IdentifierValidatorService,
   ],
   exports: [AuthService],

@@ -23,6 +23,8 @@ import { IdentifierValidatorService } from './identifier-validator.service';
 import { AuthGuard } from '@nestjs/passport';
 import { GoogleUser } from './decorators/google-user.decorator';
 import { GoogleUserPayload } from './dto/google-user.payload';
+import { FacebookUserPayload } from './dto/facebook-user.payload';
+import { FacebookUser } from './decorators/facebook-user-decorator';
 
 @ApiTags('Auth')
 @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -68,6 +70,16 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@GoogleUser() user: GoogleUserPayload) {
-    return this.authService.googleLogin(user);
+    return this.authService.handleOAuthLogin(user);
+  }
+
+  @Get('facebook')
+  @UseGuards(AuthGuard('facebook'))
+  async facebookAuth() {}
+
+  @Get('facebook/callback')
+  @UseGuards(AuthGuard('facebook'))
+  async facebookAuthRedirect(@FacebookUser() user: FacebookUserPayload) {
+    return this.authService.handleOAuthLogin(user);
   }
 }

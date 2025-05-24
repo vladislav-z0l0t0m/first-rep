@@ -16,7 +16,7 @@ import { plainToInstance } from 'class-transformer';
 import { HashingService } from 'src/common/services/hashing.service';
 import { IdentifierType } from 'src/common/constants/identifier-type.enum';
 import { SetPasswordDto } from './dto/set-password.dto';
-import { GoogleUserPayload } from 'src/auth/dto/google-user.payload';
+import { ProviderType } from 'src/common/constants/provider-type.enum';
 
 @Injectable()
 export class UserService {
@@ -213,25 +213,24 @@ export class UserService {
     return username;
   }
 
-  async findOrCreateUserByGoogle(
-    googlePayload: GoogleUserPayload,
+  async findOrCreateUserByOauth(
+    email: string,
+    provider: ProviderType,
   ): Promise<UserResponseDto> {
     const user: User | null = await this.userRepository.findOneBy({
-      email: googlePayload.email,
+      email,
     });
 
     if (user) {
       return this.mapToDto(user);
     }
 
-    const username: string = await this.generateUniqueUsernameByEmail(
-      googlePayload.email,
-    );
+    const username: string = await this.generateUniqueUsernameByEmail(email);
 
     const newUser: User = this.userRepository.create({
-      email: googlePayload.email,
+      email: email,
       username: username,
-      provider: googlePayload.provider,
+      provider: provider,
       password: null,
       phone: null,
     });

@@ -9,7 +9,7 @@ import { GoogleUserPayload } from '../dto/google-user.payload';
 export const GoogleUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): GoogleUserPayload => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    const user = request.user;
+    const user = request.user as GoogleUserPayload;
 
     if (!user) {
       throw new UnauthorizedException(
