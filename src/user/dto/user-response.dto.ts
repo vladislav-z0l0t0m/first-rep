@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { ProviderType } from 'src/common/constants/provider-type.enum';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -26,9 +27,21 @@ export class UserResponseDto {
   @ApiProperty({
     description: 'Phone number of the user',
     example: '+1234567890',
+    nullable: true,
+    required: true,
   })
   @Expose()
-  phone: string;
+  phone: string | null;
+
+  @ApiProperty({
+    enum: ProviderType,
+    description: 'Provider type of the user',
+    example: ProviderType.GOOGLE,
+    nullable: true,
+    required: true,
+  })
+  @Expose()
+  provider: ProviderType | null;
 
   @ApiProperty({
     description: 'User creation date',

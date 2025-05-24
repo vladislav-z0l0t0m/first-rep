@@ -62,6 +62,7 @@ export default tseslint.config(
       'import/no-cycle': 'warn',
       'sonarjs/cognitive-complexity': ['warn', 15],
       'linebreak-style': ['warn', 'windows'],
+      'no-console': 'error',
     },
   },
 );

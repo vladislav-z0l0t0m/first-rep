@@ -15,6 +15,8 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { HashingService } from 'src/common/services/hashing.service';
 import { IdentifierType } from 'src/common/constants/identifier-type.enum';
+import { SetPasswordDto } from './dto/set-password.dto';
+import { GoogleUserPayload } from 'src/auth/dto/google-user.payload';
 
 @Injectable()
 export class UserService {
@@ -68,6 +70,9 @@ export class UserService {
   ): Promise<void> {
     const user = await this.findUserById(id);
 
+    if (!user.password)
+      throw new ForbiddenException('This account does not have a password');
+
     const isOldPasswordCorrect = await this.hashingService.compare(
       updatePasswordDto.oldPassword,
       user.password,
@@ -89,6 +94,17 @@ export class UserService {
     await this.userRepository.save(user);
   }
 
+  async setPassword(id: number, setPasswordDto: SetPasswordDto): Promise<void> {
+    const user = await this.findUserById(id);
+
+    if (user.password)
+      throw new BadRequestException('This account already has a password');
+
+    user.password = await this.hashingService.hash(setPasswordDto.password);
+
+    await this.userRepository.save(user);
+  }
+
   async remove(id: number): Promise<UserResponseDto> {
     const user = await this.findUserById(id);
     const removedUser = await this.userRepository.remove(user);
@@ -104,7 +120,7 @@ export class UserService {
   }
 
   private async checkUnique(
-    field: 'email' | 'phone' | 'username',
+    field: IdentifierType,
     value: string,
     excludeId?: number,
   ): Promise<void> {
@@ -131,15 +147,17 @@ export class UserService {
 
     if (email) {
       const excludeId = currentUser ? currentUser.id : undefined;
-      checks.push(this.checkUnique('email', email, excludeId));
+      checks.push(this.checkUnique(IdentifierType.EMAIL, email, excludeId));
     }
     if (phone) {
       const excludeId = currentUser ? currentUser.id : undefined;
-      checks.push(this.checkUnique('phone', phone, excludeId));
+      checks.push(this.checkUnique(IdentifierType.PHONE, phone, excludeId));
     }
     if (username) {
       const excludeId = currentUser ? currentUser.id : undefined;
-      checks.push(this.checkUnique('username', username, excludeId));
+      checks.push(
+        this.checkUnique(IdentifierType.USERNAME, username, excludeId),
+      );
     }
 
     await Promise.all(checks);
@@ -163,5 +181,63 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async generateUniqueUsernameByEmail(email: string): Promise<string> {
+    let baseUsername = email.split('@')[0].toLowerCase();
+
+    baseUsername = baseUsername.replace(/[^a-z0-9]/g, '');
+
+    if (baseUsername.length < 3) {
+      const randomNumber = Math.floor(1000 + Math.random() * 9000);
+      baseUsername = `user${randomNumber}`;
+    }
+
+    const MAX_BASE_LENGTH = 25;
+    if (baseUsername.length > MAX_BASE_LENGTH) {
+      baseUsername = baseUsername.substring(0, MAX_BASE_LENGTH);
+    }
+
+    let username = baseUsername;
+    let counter = 0;
+
+    while (await this.userRepository.findOne({ where: { username } })) {
+      counter++;
+      username = `${baseUsername}${counter}`;
+      if (username.length > 30) {
+        const availableBaseLength = MAX_BASE_LENGTH - counter.toString().length;
+        username = `${baseUsername.substring(0, availableBaseLength)}${counter}`;
+      }
+    }
+
+    return username;
+  }
+
+  async findOrCreateUserByGoogle(
+    googlePayload: GoogleUserPayload,
+  ): Promise<UserResponseDto> {
+    const user: User | null = await this.userRepository.findOneBy({
+      email: googlePayload.email,
+    });
+
+    if (user) {
+      return this.mapToDto(user);
+    }
+
+    const username: string = await this.generateUniqueUsernameByEmail(
+      googlePayload.email,
+    );
+
+    const newUser: User = this.userRepository.create({
+      email: googlePayload.email,
+      username: username,
+      provider: googlePayload.provider,
+      password: null,
+      phone: null,
+    });
+
+    await this.userRepository.save(newUser);
+
+    return this.mapToDto(newUser);
   }
 }

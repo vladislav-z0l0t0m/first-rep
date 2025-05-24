@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserService } from 'src/user/user.service';
@@ -6,6 +10,7 @@ import { HashingService } from 'src/common/services/hashing.service';
 import { User } from 'src/user/entities/user.entity';
 import { IdentifierType } from '../common/constants/identifier-type.enum';
 import { UserDto } from './dto/user.dto';
+import { GoogleUserPayload } from './dto/google-user.payload';
 
 @Injectable()
 export class AuthService {
@@ -22,12 +27,18 @@ export class AuthService {
   ): Promise<User> {
     const user = await this.usersService.findByField(type, identifier);
 
+    if (!user.password) {
+      throw new ForbiddenException('This account does not have a password');
+    }
+
     const isPasswordValid = await this.passwordService.compare(
       password,
       user.password,
     );
 
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid password');
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password');
+    }
 
     return user;
   }
@@ -44,6 +55,28 @@ export class AuthService {
     return {
       access_token,
       user: userDto,
+    };
+  }
+
+  async googleLogin(
+    googlePayload: GoogleUserPayload,
+  ): Promise<LoginResponseDto> {
+    if (!googlePayload || !googlePayload.email) {
+      throw new UnauthorizedException(
+        'Insufficient information from Google provider.',
+      );
+    }
+
+    const user =
+      await this.usersService.findOrCreateUserByGoogle(googlePayload);
+
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+      },
     };
   }
 }

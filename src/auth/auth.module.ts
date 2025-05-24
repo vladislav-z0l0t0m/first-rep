@@ -7,19 +7,32 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { IdentifierValidatorService } from './identifier-validator.service';
 import { UserModule } from 'src/user/user.module';
 import { CommonModule } from 'src/common/common.module';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default_secret',
-      signOptions: { expiresIn: '1h' },
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN'),
+        },
+      }),
     }),
     UserModule,
     CommonModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, IdentifierValidatorService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+    IdentifierValidatorService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

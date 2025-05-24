@@ -24,6 +24,7 @@ import {
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { UserResponseDto } from './dto/user-response.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 
 @ApiTags('Users')
 @ApiInternalServerErrorResponse({ description: 'Internal server error' })
@@ -93,6 +94,23 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
   ): Promise<void> {
     return this.userService.updatePassword(id, updatePasswordDto);
+  }
+
+  @Patch(':id/password/set')
+  @Auth()
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+  @ApiOkResponse({
+    description: 'Password setted',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Validation error' })
+  @ApiForbiddenResponse({ description: 'This account already has a password' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  setPassword(
+    @Param() { id }: ParamsIdDto,
+    @Body() setPasswordDto: SetPasswordDto,
+  ): Promise<void> {
+    return this.userService.setPassword(id, setPasswordDto);
   }
 
   @Delete(':id')
