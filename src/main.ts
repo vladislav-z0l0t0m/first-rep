@@ -28,11 +28,10 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('/swager', app, document);
+  SwaggerModule.setup('/swagger', app, document);
 
   await app.listen(port);
 }
-bootstrap().catch((err) => {
-  console.error('Bootstrap failed', err);
+bootstrap().catch(() => {
   process.exit(1);
 });
