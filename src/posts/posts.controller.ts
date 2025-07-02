@@ -15,7 +15,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PostEntity } from './entities/post.entity';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
-import { Auth } from 'src/auth/auth.decorator';
+import { Auth } from 'src/common/decorators/auth.decorator';
 
 @ApiTags('Posts')
 @ApiResponse({
