@@ -16,7 +16,8 @@ import { plainToInstance } from 'class-transformer';
 import { HashingService } from 'src/common/services/hashing.service';
 import { IdentifierType } from 'src/common/constants/identifier-type.enum';
 import { SetPasswordDto } from './dto/set-password.dto';
-import { ProviderType } from 'src/common/constants/provider-type.enum';
+import { AuthenticateUserDto } from './dto/authenticate-user.dto';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 
 @Injectable()
 export class UserService {
@@ -214,23 +215,24 @@ export class UserService {
   }
 
   async findOrCreateUserByOauth(
-    email: string,
-    provider: ProviderType,
+    oauthLoginDto: OAuthLoginDto,
   ): Promise<UserResponseDto> {
     const user: User | null = await this.userRepository.findOneBy({
-      email,
+      email: oauthLoginDto.email,
     });
 
     if (user) {
       return this.mapToDto(user);
     }
 
-    const username: string = await this.generateUniqueUsernameByEmail(email);
+    const username: string = await this.generateUniqueUsernameByEmail(
+      oauthLoginDto.email,
+    );
 
     const newUser: User = this.userRepository.create({
-      email: email,
+      email: oauthLoginDto.email,
       username: username,
-      provider: provider,
+      provider: oauthLoginDto.provider,
       password: null,
       phone: null,
     });
@@ -238,5 +240,28 @@ export class UserService {
     await this.userRepository.save(newUser);
 
     return this.mapToDto(newUser);
+  }
+
+  async authenticateUser(
+    authenticateUserDto: AuthenticateUserDto,
+  ): Promise<UserResponseDto> {
+    const user = await this.findByField(
+      authenticateUserDto.identifierType,
+      authenticateUserDto.identifier,
+    );
+    if (!user.password) {
+      throw new Error('This account does not have a password');
+    }
+
+    const isPasswordValid = await this.hashingService.compare(
+      authenticateUserDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new Error('Invalid password');
+    }
+
+    return this.mapToDto(user);
   }
 }
