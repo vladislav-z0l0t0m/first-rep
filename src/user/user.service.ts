@@ -112,6 +112,10 @@ export class UserService {
     return this.mapToDto(removedUser);
   }
 
+  async removeAll(): Promise<void> {
+    await this.userRepository.clear();
+  }
+
   private async findUserById(id: number): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
 

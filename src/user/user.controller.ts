@@ -152,6 +152,15 @@ export class UserController {
     return this.userService.remove(id);
   }
 
+  @Delete()
+  @Auth()
+  @ApiOkResponse({
+    description: 'All users deleted',
+  })
+  removeAll(): Promise<void> {
+    return this.userService.removeAll();
+  }
+
   @Post('auth/authenticate')
   @ApiOkResponse({
     description: 'User authenticated',
