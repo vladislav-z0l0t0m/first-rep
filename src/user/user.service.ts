@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -254,7 +255,7 @@ export class UserService {
       authenticateUserDto.identifier,
     );
     if (!user.password) {
-      throw new Error('This account does not have a password');
+      throw new UnauthorizedException('This account does not have a password');
     }
 
     const isPasswordValid = await this.hashingService.compare(
@@ -263,7 +264,7 @@ export class UserService {
     );
 
     if (!isPasswordValid) {
-      throw new Error('Invalid password');
+      throw new UnauthorizedException('Invalid password');
     }
 
     return this.mapToDto(user);
