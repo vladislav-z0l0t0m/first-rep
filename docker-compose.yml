@@ -74,6 +74,7 @@ services:
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
       FACEBOOK_CALLBACK_URL: ${FACEBOOK_CALLBACK_URL}
+      NODE_ENV: ${NODE_ENV}
     command: npm run start:dev
     volumes:
       - ../inst-auth:/app
