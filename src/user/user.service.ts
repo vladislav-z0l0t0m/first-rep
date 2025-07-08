@@ -15,6 +15,7 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { HashingService } from 'src/common/services/hashing.service';
+import { AuthApiService } from 'src/common/services/auth-api.service';
 import { IdentifierType } from 'src/common/constants/identifier-type.enum';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
@@ -26,6 +27,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly hashingService: HashingService,
+    private readonly authApiService: AuthApiService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -94,6 +96,7 @@ export class UserService {
       updatePasswordDto.newPassword,
     );
     await this.userRepository.save(user);
+    await this.authApiService.revokeUserTokens(id);
   }
 
   async setPassword(id: number, setPasswordDto: SetPasswordDto): Promise<void> {
@@ -105,16 +108,14 @@ export class UserService {
     user.password = await this.hashingService.hash(setPasswordDto.password);
 
     await this.userRepository.save(user);
+    await this.authApiService.revokeUserTokens(id);
   }
 
   async remove(id: number): Promise<UserResponseDto> {
     const user = await this.findUserById(id);
     const removedUser = await this.userRepository.remove(user);
+    await this.authApiService.revokeUserTokens(id);
     return this.mapToDto(removedUser);
-  }
-
-  async removeAll(): Promise<void> {
-    await this.userRepository.clear();
   }
 
   private async findUserById(id: number): Promise<User> {
