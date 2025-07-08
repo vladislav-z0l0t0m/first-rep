@@ -5,6 +5,8 @@ import { PostsModule } from './posts/posts.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
+import { AdminModule } from './admin/admin.module';
+import { InternalAuthModule } from './internal-auth/internal-auth.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { UserModule } from './user/user.module';
     }),
     UserModule,
     PostsModule,
+    InternalAuthModule,
+    ...(process.env.NODE_ENV !== 'production' ? [AdminModule] : []),
   ],
   controllers: [AppController],
   providers: [AppService],
