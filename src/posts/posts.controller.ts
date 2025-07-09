@@ -16,6 +16,10 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PostEntity } from './entities/post.entity';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
+import {
+  CurrentUser,
+  AuthUser,
+} from '../common/decorators/current-user.decorator';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -37,10 +41,14 @@ export class PostsController {
   })
   @Auth()
   @Post()
-  create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
-    return this.postsService.create(createPostDto);
+  create(
+    @Body() createPostDto: CreatePostDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<PostEntity> {
+    return this.postsService.create(createPostDto, user);
   }
 
+  // DEPRECATED: Will be moved to post reactions entity in the future
   @ApiOperation({
     summary: 'Like post',
     description: 'Set a like on the post and return the updated post',
@@ -55,6 +63,7 @@ export class PostsController {
     return this.postsService.like(id);
   }
 
+  // DEPRECATED: Will be moved to post reactions entity in the future
   @ApiOperation({
     summary: 'Dislike post',
     description: 'Set a dislike on the post and return the updated post',

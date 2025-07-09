@@ -4,6 +4,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { PostEntity } from './entities/post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AuthUser } from '../common/decorators/current-user.decorator';
 
 @Injectable()
 export class PostsService {
@@ -12,9 +13,11 @@ export class PostsService {
     private postsRepository: Repository<PostEntity>,
   ) {}
 
-  async create(post: CreatePostDto): Promise<PostEntity> {
-    const newPost: PostEntity = this.postsRepository.create(post);
-
+  async create(post: CreatePostDto, user: AuthUser): Promise<PostEntity> {
+    const newPost: PostEntity = this.postsRepository.create({
+      ...post,
+      user: { id: user.userId },
+    });
     return this.postsRepository.save(newPost);
   }
 
@@ -39,19 +42,13 @@ export class PostsService {
     await this.postsRepository.remove(post);
   }
 
+  // DEPRECATED: Will be moved to post reactions entity in the future
   async like(id: number): Promise<PostEntity> {
-    await this.findPostById(id);
-
-    await this.postsRepository.increment({ id }, 'likes', 1);
-
     return this.findPostById(id);
   }
 
+  // DEPRECATED: Will be moved to post reactions entity in the future
   async dislike(id: number): Promise<PostEntity> {
-    await this.findPostById(id);
-
-    await this.postsRepository.increment({ id }, 'dislikes', 1);
-
     return this.findPostById(id);
   }
 
