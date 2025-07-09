@@ -42,16 +42,6 @@ export class PostsService {
     await this.postsRepository.remove(post);
   }
 
-  // DEPRECATED: Will be moved to post reactions entity in the future
-  async like(id: number): Promise<PostEntity> {
-    return this.findPostById(id);
-  }
-
-  // DEPRECATED: Will be moved to post reactions entity in the future
-  async dislike(id: number): Promise<PostEntity> {
-    return this.findPostById(id);
-  }
-
   private async findPostById(id: number): Promise<PostEntity> {
     const post = await this.postsRepository.findOne({ where: { id } });
 

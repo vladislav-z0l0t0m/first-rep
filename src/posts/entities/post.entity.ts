@@ -13,7 +13,7 @@ export class PostEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, { nullable: false, eager: true })
+  @ManyToOne(() => User, { nullable: false })
   user: User;
 
   @Column({ type: 'varchar', length: 510, nullable: true })
