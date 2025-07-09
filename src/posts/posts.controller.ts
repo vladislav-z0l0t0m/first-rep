@@ -12,7 +12,14 @@ import {
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { PostEntity } from './entities/post.entity';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
@@ -20,6 +27,9 @@ import {
   CurrentUser,
   AuthUser,
 } from '../common/decorators/current-user.decorator';
+import { PostsReactionsService } from './posts-reactions.service';
+import { PostReactionType } from './constants/post-reaction-type.enum';
+import { ReactionResponseDto } from './dto/reaction-response.dto';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -28,7 +38,10 @@ import {
 })
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly postsReactionsService: PostsReactionsService,
+  ) {}
 
   @ApiOperation({
     summary: 'Create post',
@@ -48,34 +61,79 @@ export class PostsController {
     return this.postsService.create(createPostDto, user);
   }
 
-  // DEPRECATED: Will be moved to post reactions entity in the future
   @ApiOperation({
     summary: 'Like post',
-    description: 'Set a like on the post and return the updated post',
+    description: 'Set a like on the post. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Like added' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
+  @ApiOkResponse({
+    description: 'Reaction status and entity',
+    type: ReactionResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @Post(':id/like')
-  like(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
-    return this.postsService.like(id);
+  async like(
+    @Param() { id: postId }: ParamsIdDto,
+    @CurrentUser() { userId }: AuthUser,
+  ) {
+    return this.postsReactionsService.handleReaction(
+      postId,
+      { reactionType: PostReactionType.LIKE },
+      userId,
+    );
   }
 
-  // DEPRECATED: Will be moved to post reactions entity in the future
   @ApiOperation({
     summary: 'Dislike post',
-    description: 'Set a dislike on the post and return the updated post',
+    description:
+      'Set a dislike on the post. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Dislike added' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
+  @ApiOkResponse({
+    description: 'Reaction status and entity',
+    type: ReactionResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @Post(':id/dislike')
-  dislike(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
-    return this.postsService.dislike(id);
+  async dislike(
+    @Param() { id: postId }: ParamsIdDto,
+    @CurrentUser() { userId }: AuthUser,
+  ) {
+    return this.postsReactionsService.handleReaction(
+      postId,
+      { reactionType: PostReactionType.DISLIKE },
+      userId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Set reaction',
+    description:
+      'Set or update a reaction on the post. If this reaction exists - remove it.',
+  })
+  @ApiOkResponse({
+    description: 'Reaction status and entity',
+    type: ReactionResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/reactions')
+  async setReaction(
+    @Param() { id: postId }: ParamsIdDto,
+    @Body() body: { reactionType: PostReactionType },
+    @CurrentUser() { userId }: AuthUser,
+  ) {
+    return this.postsReactionsService.handleReaction(
+      postId,
+      { reactionType: body.reactionType },
+      userId,
+    );
   }
 
   @ApiOperation({
