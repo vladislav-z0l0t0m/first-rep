@@ -5,9 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostEntity } from './entities/post.entity';
 import { PostReactionEntity } from './entities/post-reaction.entity';
 import { PostsReactionsService } from './posts-reactions.service';
+import { CommentsModule } from '../comments/comments.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PostEntity, PostReactionEntity])],
+  imports: [
+    TypeOrmModule.forFeature([PostEntity, PostReactionEntity]),
+    CommentsModule,
+  ],
   controllers: [PostsController],
   providers: [PostsService, PostsReactionsService],
   exports: [PostsService, PostsReactionsService],

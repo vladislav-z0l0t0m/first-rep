@@ -30,6 +30,9 @@ import {
 import { PostsReactionsService } from './posts-reactions.service';
 import { PostReactionType } from './constants/post-reaction-type.enum';
 import { ReactionResponseDto } from './dto/reaction-response.dto';
+import { CommentEntity } from '../comments/entities/comment.entity';
+import { CreateCommentDto } from '../comments/dto/create-comment.dto';
+import { CommentsService } from '../comments/comments.service';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -41,6 +44,7 @@ export class PostsController {
   constructor(
     private readonly postsService: PostsService,
     private readonly postsReactionsService: PostsReactionsService,
+    private readonly commentsService: CommentsService,
   ) {}
 
   @ApiOperation({
@@ -186,5 +190,42 @@ export class PostsController {
   @Delete(':id')
   remove(@Param() { id }: ParamsIdDto): Promise<void> {
     return this.postsService.remove(id);
+  }
+
+  @ApiOperation({
+    summary: 'Create comment',
+    description: 'Create a new comment for the post.',
+  })
+  @ApiResponse({
+    status: 201,
+    type: CommentEntity,
+    description: 'Created comment',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Auth()
+  @Post(':id/comments')
+  async createComment(
+    @Param() { id: postId }: ParamsIdDto,
+    @Body() createCommentDto: CreateCommentDto,
+    @CurrentUser() { userId: authorId }: AuthUser,
+  ): Promise<CommentEntity> {
+    return this.commentsService.create(postId, authorId, createCommentDto);
+  }
+
+  @ApiOperation({
+    summary: 'Get post comments',
+    description: 'Get all comments for the post.',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [CommentEntity],
+    description: 'List of comments',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Get(':id/comments')
+  async getPostComments(
+    @Param() { id: postId }: ParamsIdDto,
+  ): Promise<CommentEntity[]> {
+    return this.commentsService.findByPost(postId);
   }
 }
