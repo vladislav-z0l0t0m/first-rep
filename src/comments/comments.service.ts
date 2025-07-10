@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, IsNull, TreeRepository } from 'typeorm';
 import { CommentEntity } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -10,7 +10,7 @@ import { PostEntity } from '../posts/entities/post.entity';
 export class CommentsService {
   constructor(
     @InjectRepository(CommentEntity)
-    private commentsRepository: Repository<CommentEntity>,
+    private commentsRepository: TreeRepository<CommentEntity>,
     private dataSource: DataSource,
   ) {}
 
@@ -42,11 +42,21 @@ export class CommentsService {
   }
 
   async findByPost(postId: number): Promise<CommentEntity[]> {
-    return this.commentsRepository.find({
-      where: { post: { id: postId } },
-      relations: ['author', 'replyToUser'],
-      order: { path: 'ASC' },
+    const treeRepo = this.dataSource.getTreeRepository(CommentEntity);
+
+    const rootComments = await treeRepo.find({
+      where: {
+        post: { id: postId },
+        parent: IsNull(),
+      },
+      order: { createdAt: 'ASC' },
     });
+
+    const trees = await Promise.all(
+      rootComments.map((root) => treeRepo.findDescendantsTree(root)),
+    );
+
+    return trees;
   }
 
   async update(

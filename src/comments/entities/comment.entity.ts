@@ -7,11 +7,13 @@ import {
   ManyToOne,
   TreeParent,
   TreeChildren,
+  Tree,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { PostEntity } from '../../posts/entities/post.entity';
 
 @Entity()
+@Tree('materialized-path')
 export class CommentEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -33,9 +35,6 @@ export class CommentEntity {
 
   @TreeChildren()
   children: CommentEntity[];
-
-  @Column({ nullable: true })
-  path: string;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
