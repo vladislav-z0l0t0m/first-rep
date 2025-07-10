@@ -1,0 +1,118 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { DataSource, EntityTarget, Repository } from 'typeorm';
+import { CreateReactionDto } from './dto/create-reaction.dto';
+import { PostEntity } from '../posts/entities/post.entity';
+import { ReactionResponseDto } from './dto/reaction-response.dto';
+import { ReactionStatus } from './constants/reaction-status.enum';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ReactionEntity } from './reaction.entity';
+import { ReactableType } from './constants/reactable-type.enum';
+import { CommentEntity } from 'src/comments/entities/comment.entity';
+import { ReactionType } from './constants/reaction-type.enum';
+
+@Injectable()
+export class ReactionsService {
+  private reactableEntities = new Map<ReactableType, EntityTarget<any>>([
+    [ReactableType.POST, PostEntity],
+    [ReactableType.COMMENT, CommentEntity],
+  ]);
+
+  constructor(
+    @InjectRepository(ReactionEntity)
+    private reactionsRepository: Repository<ReactionEntity>,
+    private dataSource: DataSource,
+  ) {}
+
+  public async handleReaction(
+    reactableId: number,
+    reactableType: ReactableType,
+    dto: CreateReactionDto,
+    authorId: number,
+  ): Promise<ReactionResponseDto> {
+    await this.validateReactableExists(reactableType, reactableId);
+
+    const existingReaction = await this.reactionsRepository.findOne({
+      where: {
+        reactableId,
+        reactableType,
+        author: { id: authorId },
+      },
+    });
+
+    if (existingReaction) {
+      if (existingReaction.type === dto.type) {
+        return this.removeReaction(existingReaction);
+      } else {
+        return this.updateReaction(existingReaction, dto.type);
+      }
+    }
+
+    return this.createReaction(reactableId, reactableType, dto.type, authorId);
+  }
+
+  private async createReaction(
+    reactableId: number,
+    reactableType: ReactableType,
+    type: ReactionType,
+    authorId: number,
+  ): Promise<ReactionResponseDto> {
+    const newReaction = this.reactionsRepository.create({
+      reactableId,
+      reactableType,
+      type,
+      author: { id: authorId },
+    });
+
+    const createdReaction = await this.reactionsRepository.save(newReaction);
+
+    return ReactionResponseDto.fromEntity(
+      ReactionStatus.CREATED,
+      createdReaction,
+    );
+  }
+
+  private async updateReaction(
+    reaction: ReactionEntity,
+    newType: ReactionType,
+  ): Promise<ReactionResponseDto> {
+    reaction.type = newType;
+
+    const updatedReaction = await this.reactionsRepository.save(reaction);
+
+    return ReactionResponseDto.fromEntity(
+      ReactionStatus.UPDATED,
+      updatedReaction,
+    );
+  }
+
+  private async removeReaction(
+    reaction: ReactionEntity,
+  ): Promise<ReactionResponseDto> {
+    const response = ReactionResponseDto.fromEntity(
+      ReactionStatus.REMOVED,
+      reaction,
+    );
+
+    await this.reactionsRepository.remove(reaction);
+
+    return response;
+  }
+
+  private async validateReactableExists(
+    type: ReactableType,
+    id: number,
+  ): Promise<void> {
+    const entityClass = this.reactableEntities.get(type);
+
+    if (!entityClass) {
+      throw new NotFoundException(`Reactable type "${type}" is not supported.`);
+    }
+
+    const entityRepository = this.dataSource.getRepository(entityClass);
+    const exists = await entityRepository.exists({ where: { id } });
+
+    if (!exists) {
+      throw new NotFoundException(`${type} with ID ${id} not found`);
+    }
+  }
+}

@@ -1,4 +1,4 @@
-export enum PostReactionType {
+export enum ReactionType {
   LIKE = 'like',
   DISLIKE = 'dislike',
   LOVE = 'love',

@@ -27,12 +27,13 @@ import {
   CurrentUser,
   AuthUser,
 } from '../common/decorators/current-user.decorator';
-import { PostsReactionsService } from './posts-reactions.service';
-import { PostReactionType } from './constants/post-reaction-type.enum';
-import { ReactionResponseDto } from './dto/reaction-response.dto';
+import { ReactionsService } from '../reactions/reactions.service';
+import { ReactionType } from '../reactions/constants/reaction-type.enum';
+import { ReactionResponseDto } from '../reactions/dto/reaction-response.dto';
 import { CommentEntity } from '../comments/entities/comment.entity';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto';
 import { CommentsService } from '../comments/comments.service';
+import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -43,7 +44,7 @@ import { CommentsService } from '../comments/comments.service';
 export class PostsController {
   constructor(
     private readonly postsService: PostsService,
-    private readonly postsReactionsService: PostsReactionsService,
+    private readonly reactionsService: ReactionsService,
     private readonly commentsService: CommentsService,
   ) {}
 
@@ -82,9 +83,10 @@ export class PostsController {
     @Param() { id: postId }: ParamsIdDto,
     @CurrentUser() { userId }: AuthUser,
   ) {
-    return this.postsReactionsService.handleReaction(
+    return this.reactionsService.handleReaction(
       postId,
-      { reactionType: PostReactionType.LIKE },
+      ReactableType.POST,
+      { type: ReactionType.LIKE },
       userId,
     );
   }
@@ -107,9 +109,10 @@ export class PostsController {
     @Param() { id: postId }: ParamsIdDto,
     @CurrentUser() { userId }: AuthUser,
   ) {
-    return this.postsReactionsService.handleReaction(
+    return this.reactionsService.handleReaction(
       postId,
-      { reactionType: PostReactionType.DISLIKE },
+      ReactableType.POST,
+      { type: ReactionType.DISLIKE },
       userId,
     );
   }
@@ -130,12 +133,13 @@ export class PostsController {
   @Post(':id/reactions')
   async setReaction(
     @Param() { id: postId }: ParamsIdDto,
-    @Body() body: { reactionType: PostReactionType },
+    @Body() body: { type: ReactionType },
     @CurrentUser() { userId }: AuthUser,
   ) {
-    return this.postsReactionsService.handleReaction(
+    return this.reactionsService.handleReaction(
       postId,
-      { reactionType: body.reactionType },
+      ReactableType.POST,
+      { type: body.type },
       userId,
     );
   }

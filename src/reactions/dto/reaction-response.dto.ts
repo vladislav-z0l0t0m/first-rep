@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ReactionStatus } from '../constants/reaction-status.enum';
-import { PostReactionType } from '../constants/post-reaction-type.enum';
-import { PostReactionEntity } from '../entities/post-reaction.entity';
+import { ReactionType } from '../constants/reaction-type.enum';
+import { ReactionEntity } from '../reaction.entity';
+import { ReactableType } from '../constants/reactable-type.enum';
 
 export class ReactionResponseDto {
   @ApiProperty({
@@ -13,14 +14,17 @@ export class ReactionResponseDto {
   @ApiProperty()
   id: number;
 
-  @ApiProperty({ enum: PostReactionType })
-  reactionType: PostReactionType;
+  @ApiProperty()
+  authorId: number;
+
+  @ApiProperty({ enum: ReactionType })
+  type: ReactionType;
 
   @ApiProperty()
-  postId: number;
+  reactableId: number;
 
   @ApiProperty()
-  userId: number;
+  reactableType: ReactableType;
 
   @ApiProperty()
   createdAt: string;
@@ -30,14 +34,15 @@ export class ReactionResponseDto {
 
   static fromEntity(
     status: ReactionStatus,
-    entity: PostReactionEntity,
+    entity: ReactionEntity,
   ): ReactionResponseDto {
     const dto = new ReactionResponseDto();
     dto.status = status;
     dto.id = entity.id;
-    dto.reactionType = entity.reactionType;
-    dto.postId = entity.post.id;
-    dto.userId = entity.user.id;
+    dto.authorId = entity.author.id;
+    dto.type = entity.type;
+    dto.reactableId = entity.reactableId;
+    dto.reactableType = entity.reactableType;
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();
     return dto;
