@@ -86,4 +86,31 @@ export class CommentsService {
       throw new NotFoundException('Comment not found');
     }
   }
+
+  async countByPostId(postId: number): Promise<number> {
+    return this.commentsRepository.count({
+      where: { post: { id: postId } },
+    });
+  }
+
+  async countByPostIds(postIds: number[]): Promise<Map<number, number>> {
+    if (postIds.length === 0) {
+      return new Map();
+    }
+
+    const result = await this.commentsRepository
+      .createQueryBuilder('comment')
+      .select('comment.postId', 'postId')
+      .addSelect('COUNT(comment.id)', 'count')
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .groupBy('comment.postId')
+      .getRawMany();
+
+    return new Map(
+      result.map((item: { postId: number; count: string }) => [
+        item.postId,
+        parseInt(item.count, 10),
+      ]),
+    );
+  }
 }

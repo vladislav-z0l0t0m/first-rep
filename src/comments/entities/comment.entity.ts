@@ -21,10 +21,10 @@ export class CommentEntity {
   @Column({ type: 'varchar', length: 200 })
   text: string;
 
-  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   author: User;
 
-  @ManyToOne(() => PostEntity, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => PostEntity, { onDelete: 'CASCADE' })
   post: PostEntity;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })

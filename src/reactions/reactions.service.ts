@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource, EntityTarget, Repository } from 'typeorm';
+import { DataSource, EntityTarget, In, Repository } from 'typeorm';
 import { CreateReactionDto } from './dto/create-reaction.dto';
 import { PostEntity } from '../posts/entities/post.entity';
 import { ReactionResponseDto } from './dto/reaction-response.dto';
@@ -9,6 +9,11 @@ import { ReactionEntity } from './reaction.entity';
 import { ReactableType } from './constants/reactable-type.enum';
 import { CommentEntity } from 'src/comments/entities/comment.entity';
 import { ReactionType } from './constants/reaction-type.enum';
+
+export class FindManyReactionsDto {
+  reactableIds: number[];
+  reactableType: ReactableType;
+}
 
 @Injectable()
 export class ReactionsService {
@@ -48,6 +53,48 @@ export class ReactionsService {
     }
 
     return this.createReaction(reactableId, reactableType, dto.type, authorId);
+  }
+
+  async findByReactable(
+    reactableId: number,
+    reactableType: ReactableType,
+  ): Promise<ReactionEntity[]> {
+    return this.reactionsRepository.find({
+      where: {
+        reactableId,
+        reactableType,
+      },
+      relations: ['author'],
+    });
+  }
+
+  async findForMany(dto: FindManyReactionsDto): Promise<ReactionEntity[]> {
+    const { reactableIds, reactableType } = dto;
+
+    if (reactableIds.length === 0) {
+      return [];
+    }
+
+    return this.reactionsRepository.find({
+      where: {
+        reactableId: In(reactableIds),
+        reactableType,
+      },
+      relations: ['author'],
+    });
+  }
+
+  groupReactionsById(
+    reactions: ReactionEntity[],
+  ): Map<number, ReactionEntity[]> {
+    return reactions.reduce((map, reaction) => {
+      const reactionsForPost = map.get(reaction.reactableId) || [];
+
+      reactionsForPost.push(reaction);
+
+      map.set(reaction.reactableId, reactionsForPost);
+      return map;
+    }, new Map<number, ReactionEntity[]>());
   }
 
   private async createReaction(

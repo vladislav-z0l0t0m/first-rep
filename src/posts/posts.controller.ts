@@ -8,6 +8,7 @@ import {
   Delete,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -20,7 +21,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { PostEntity } from './entities/post.entity';
+import { PostResponseDto } from './dto/post-response.dto';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import {
@@ -30,10 +31,13 @@ import {
 import { ReactionsService } from '../reactions/reactions.service';
 import { ReactionType } from '../reactions/constants/reaction-type.enum';
 import { ReactionResponseDto } from '../reactions/dto/reaction-response.dto';
-import { CommentEntity } from '../comments/entities/comment.entity';
+import { CommentResponseDto } from '../comments/dto/comment-response.dto';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto';
 import { CommentsService } from '../comments/comments.service';
 import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
+import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-response.dto';
+import { CursorPaginationDto } from './dto/cursor-pagination.dto';
+import { CommentEntity } from 'src/comments/entities/comment.entity';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -62,7 +66,7 @@ export class PostsController {
   create(
     @Body() createPostDto: CreatePostDto,
     @CurrentUser() user: AuthUser,
-  ): Promise<PostEntity> {
+  ): Promise<PostResponseDto> {
     return this.postsService.create(createPostDto, user);
   }
 
@@ -150,8 +154,11 @@ export class PostsController {
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Posts returned' })
   @Get()
-  findAll(): Promise<PostEntity[]> {
-    return this.postsService.findAll();
+  findAll(
+    @Query() paginationDto: CursorPaginationDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<CursorPaginatedPostsResponseDto> {
+    return this.postsService.findAll(paginationDto, user?.userId);
   }
 
   @ApiOperation({
@@ -162,8 +169,11 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Get(':id')
-  findOne(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
-    return this.postsService.findOne(id);
+  findOne(
+    @Param() { id }: ParamsIdDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<PostResponseDto> {
+    return this.postsService.findOne(id, user?.userId);
   }
 
   @ApiOperation({
@@ -178,8 +188,9 @@ export class PostsController {
   update(
     @Param() { id }: ParamsIdDto,
     @Body() updatePostDto: UpdatePostDto,
-  ): Promise<PostEntity> {
-    return this.postsService.update(id, updatePostDto);
+    @CurrentUser() user: AuthUser,
+  ): Promise<PostResponseDto> {
+    return this.postsService.update(id, updatePostDto, user.userId);
   }
 
   @ApiOperation({
@@ -202,7 +213,7 @@ export class PostsController {
   })
   @ApiResponse({
     status: 201,
-    type: CommentEntity,
+    type: CommentResponseDto,
     description: 'Created comment',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
@@ -222,7 +233,7 @@ export class PostsController {
   })
   @ApiResponse({
     status: 200,
-    type: [CommentEntity],
+    type: [CommentResponseDto],
     description: 'List of comments',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
