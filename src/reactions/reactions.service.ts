@@ -10,11 +10,6 @@ import { ReactableType } from './constants/reactable-type.enum';
 import { CommentEntity } from 'src/comments/entities/comment.entity';
 import { ReactionType } from './constants/reaction-type.enum';
 
-export class FindManyReactionsDto {
-  reactableIds: number[];
-  reactableType: ReactableType;
-}
-
 @Injectable()
 export class ReactionsService {
   private reactableEntities = new Map<ReactableType, EntityTarget<any>>([
@@ -42,6 +37,7 @@ export class ReactionsService {
         reactableType,
         author: { id: authorId },
       },
+      relations: ['author'],
     });
 
     if (existingReaction) {
@@ -68,9 +64,10 @@ export class ReactionsService {
     });
   }
 
-  async findForMany(dto: FindManyReactionsDto): Promise<ReactionEntity[]> {
-    const { reactableIds, reactableType } = dto;
-
+  async findForMany(
+    reactableIds: number[],
+    reactableType: ReactableType,
+  ): Promise<ReactionEntity[]> {
     if (reactableIds.length === 0) {
       return [];
     }

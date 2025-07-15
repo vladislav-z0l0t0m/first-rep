@@ -2,6 +2,8 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -12,7 +14,7 @@ import { FindManyOptions, LessThan, Repository } from 'typeorm';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { ReactionsService } from '../reactions/reactions.service';
 import { ReactableType } from '../reactions/constants/reactable-type.enum';
-import { CursorPaginationDto } from './dto/cursor-pagination.dto';
+import { CursorPaginationDto } from '../common/dto/cursor-pagination.dto';
 import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-response.dto';
 import { CommentsService } from 'src/comments/comments.service';
 
@@ -22,6 +24,7 @@ export class PostsService {
     @InjectRepository(PostEntity)
     private postsRepository: Repository<PostEntity>,
     private reactionsService: ReactionsService,
+    @Inject(forwardRef(() => CommentsService))
     private commentsService: CommentsService,
   ) {}
 
@@ -120,6 +123,16 @@ export class PostsService {
     await this.postsRepository.remove(post);
   }
 
+  async ensurePostExists(postId: number): Promise<void> {
+    const exists = await this.postsRepository.exists({
+      where: { id: postId },
+    });
+
+    if (!exists) {
+      throw new NotFoundException(`Post with ID ${postId} not found`);
+    }
+  }
+
   private async findPostById(id: number): Promise<PostEntity> {
     const post = await this.postsRepository.findOne({
       where: { id },
@@ -143,10 +156,10 @@ export class PostsService {
 
     const postIds = posts.map((post) => post.id);
 
-    const reactions = await this.reactionsService.findForMany({
-      reactableIds: postIds,
-      reactableType: ReactableType.POST,
-    });
+    const reactions = await this.reactionsService.findForMany(
+      postIds,
+      ReactableType.POST,
+    );
 
     const commentsMap = await this.commentsService.countByPostIds(postIds);
 

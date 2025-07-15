@@ -21,7 +21,7 @@ export class CommentResponseDto {
   replyToUser: AuthorDto | null;
 
   @ApiProperty()
-  children: CommentResponseDto[];
+  repliesCount: number;
 
   @ApiProperty()
   createdAt: string;
@@ -31,30 +31,26 @@ export class CommentResponseDto {
 
   static fromEntity(
     comment: CommentEntity,
-    allReactionsMap: Map<number, ReactionEntity[]>,
+    reactions: ReactionEntity[],
     currentUserId?: number,
+    repliesCount?: number,
   ): CommentResponseDto {
     const dto = new CommentResponseDto();
 
     dto.id = comment.id;
     dto.text = comment.text;
-    dto.author = AuthorDto.fromEntity(comment.author);
     dto.createdAt = comment.createdAt.toISOString();
     dto.updatedAt = comment.updatedAt.toISOString();
 
-    const reactionsForThisComment = allReactionsMap.get(comment.id) || [];
-    dto.reactions = ReactionsSummaryDto.fromReactions(
-      reactionsForThisComment,
-      currentUserId,
-    );
+    dto.repliesCount = repliesCount || 0;
+
+    dto.author = AuthorDto.fromEntity(comment.author);
+
+    dto.reactions = ReactionsSummaryDto.fromReactions(reactions, currentUserId);
 
     dto.replyToUser = comment.replyToUser
       ? AuthorDto.fromEntity(comment.replyToUser)
       : null;
-
-    dto.children = comment.children.map((child) =>
-      CommentResponseDto.fromEntity(child, allReactionsMap, currentUserId),
-    );
 
     return dto;
   }

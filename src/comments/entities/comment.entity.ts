@@ -8,6 +8,7 @@ import {
   TreeParent,
   TreeChildren,
   Tree,
+  DeleteDateColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { PostEntity } from '../../posts/entities/post.entity';
@@ -41,4 +42,7 @@ export class CommentEntity {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deletedAt: Date | null;
 }
