@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import {
   Injectable,
   CanActivate,
@@ -6,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 
 interface JwtPayload {
@@ -16,6 +16,8 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+  constructor(private readonly configService: ConfigService) {}
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
@@ -25,7 +27,10 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+      const payload = jwt.verify(
+        token,
+        this.configService.get('JWT_SECRET')!,
+      ) as JwtPayload;
       request['user'] = { userId: payload.userId };
       return true;
     } catch {

@@ -24,6 +24,7 @@ import {
 import { PostResponseDto } from './dto/post-response.dto';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
+import { OptionalAuth } from 'src/common/decorators/optional-auth.decorator';
 import {
   CurrentUser,
   AuthUser,
@@ -31,13 +32,14 @@ import {
 import { ReactionsService } from '../reactions/reactions.service';
 import { ReactionType } from '../reactions/constants/reaction-type.enum';
 import { ReactionResponseDto } from '../reactions/dto/reaction-response.dto';
+import { CreateReactionDto } from '../reactions/dto/create-reaction.dto';
 import { CommentResponseDto } from '../comments/dto/comment-response.dto';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto';
 import { CommentsService } from '../comments/comments.service';
 import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
 import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-response.dto';
-import { CursorPaginationDto } from './dto/cursor-pagination.dto';
-import { CommentEntity } from 'src/comments/entities/comment.entity';
+import { CursorPaginationDto } from '../common/dto/cursor-pagination.dto';
+import { CursorPaginatedCommentsResponseDto } from 'src/comments/dto/cursor-paginated-comments.dto';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -86,7 +88,7 @@ export class PostsController {
   async like(
     @Param() { id: postId }: ParamsIdDto,
     @CurrentUser() { userId }: AuthUser,
-  ) {
+  ): Promise<ReactionResponseDto> {
     return this.reactionsService.handleReaction(
       postId,
       ReactableType.POST,
@@ -112,7 +114,7 @@ export class PostsController {
   async dislike(
     @Param() { id: postId }: ParamsIdDto,
     @CurrentUser() { userId }: AuthUser,
-  ) {
+  ): Promise<ReactionResponseDto> {
     return this.reactionsService.handleReaction(
       postId,
       ReactableType.POST,
@@ -137,22 +139,24 @@ export class PostsController {
   @Post(':id/reactions')
   async setReaction(
     @Param() { id: postId }: ParamsIdDto,
-    @Body() body: { type: ReactionType },
+    @Body() createReactionDto: CreateReactionDto,
     @CurrentUser() { userId }: AuthUser,
-  ) {
+  ): Promise<ReactionResponseDto> {
     return this.reactionsService.handleReaction(
       postId,
       ReactableType.POST,
-      { type: body.type },
+      createReactionDto,
       userId,
     );
   }
 
   @ApiOperation({
     summary: 'Get all posts',
-    description: 'Return array of all posts',
+    description:
+      'Return array of all posts. Authenticated users will see their reactions.',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Posts returned' })
+  @OptionalAuth()
   @Get()
   findAll(
     @Query() paginationDto: CursorPaginationDto,
@@ -163,11 +167,13 @@ export class PostsController {
 
   @ApiOperation({
     summary: 'Get single post',
-    description: 'Return one post by its ID',
+    description:
+      'Return one post by its ID. Authenticated users will see their reactions.',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Post returned' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @OptionalAuth()
   @Get(':id')
   findOne(
     @Param() { id }: ParamsIdDto,
@@ -203,8 +209,11 @@ export class PostsController {
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  remove(@Param() { id }: ParamsIdDto): Promise<void> {
-    return this.postsService.remove(id);
+  remove(
+    @Param() { id }: ParamsIdDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<void> {
+    return this.postsService.remove(id, user.userId);
   }
 
   @ApiOperation({
@@ -223,7 +232,7 @@ export class PostsController {
     @Param() { id: postId }: ParamsIdDto,
     @Body() createCommentDto: CreateCommentDto,
     @CurrentUser() { userId: authorId }: AuthUser,
-  ): Promise<CommentEntity> {
+  ): Promise<CommentResponseDto> {
     return this.commentsService.create(postId, authorId, createCommentDto);
   }
 
@@ -240,7 +249,13 @@ export class PostsController {
   @Get(':id/comments')
   async getPostComments(
     @Param() { id: postId }: ParamsIdDto,
-  ): Promise<CommentEntity[]> {
-    return this.commentsService.findByPost(postId);
+    @Query() paginationDto: CursorPaginationDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<CursorPaginatedCommentsResponseDto> {
+    return this.commentsService.findPostRootComments(
+      postId,
+      paginationDto,
+      user?.userId,
+    );
   }
 }

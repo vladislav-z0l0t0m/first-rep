@@ -7,15 +7,20 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Get,
+  Query,
 } from '@nestjs/common';
 import {
   ApiOperation,
-  ApiResponse,
   ApiParam,
   ApiTags,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiInternalServerErrorResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
-import { CommentEntity } from './entities/comment.entity';
+
 import { ParamsIdDto } from 'src/common/dto/params-id.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentsService } from './comments.service';
@@ -26,8 +31,13 @@ import { ReactionsService } from '../reactions/reactions.service';
 import { ReactionType } from '../reactions/constants/reaction-type.enum';
 import { ReactionResponseDto } from '../reactions/dto/reaction-response.dto';
 import { ReactableType } from '../reactions/constants/reactable-type.enum';
+import { CommentResponseDto } from './dto/comment-response.dto';
+import { OptionalAuth } from 'src/common/decorators/optional-auth.decorator';
+import { CursorPaginatedCommentsResponseDto } from './dto/cursor-paginated-comments.dto';
+import { CursorPaginationDto } from 'src/common/dto/cursor-pagination.dto';
 
 @ApiTags('Comments')
+@ApiInternalServerErrorResponse({ description: 'Internal server error' })
 @Controller('comments')
 export class CommentsController {
   constructor(
@@ -36,13 +46,53 @@ export class CommentsController {
   ) {}
 
   @ApiOperation({
+    summary: 'Get comment',
+    description: 'Get a comment by id.',
+  })
+  @ApiOkResponse({ description: 'Comment returned', type: CommentResponseDto })
+  @ApiNotFoundResponse({ description: 'Comment not found' })
+  @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
+  @OptionalAuth()
+  @Get(':id')
+  async getComment(
+    @Param() { id: commentId }: ParamsIdDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<CommentResponseDto> {
+    return this.commentsService.findOne(commentId, user?.userId);
+  }
+
+  @ApiOperation({
+    summary: 'Get comments replies',
+    description: 'Get comments replies by id.',
+  })
+  @ApiOkResponse({
+    description: 'List of comments with pagination',
+    type: CursorPaginatedCommentsResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Comment not found' })
+  @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
+  @OptionalAuth()
+  @Get(':id/replies')
+  async getCommentsReplies(
+    @Param() { id: commentId }: ParamsIdDto,
+    @Query() paginationDto: CursorPaginationDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<CursorPaginatedCommentsResponseDto> {
+    return this.commentsService.findRepliesForComment(
+      commentId,
+      paginationDto,
+      user?.userId,
+    );
+  }
+
+  @ApiOperation({
     summary: 'Update comment',
     description: 'Update the text of a comment by id.',
   })
-  @ApiResponse({
-    status: 200,
-    type: CommentEntity,
-    description: 'Updated comment',
+  @ApiOkResponse({ description: 'Comment updated', type: CommentResponseDto })
+  @ApiNotFoundResponse({ description: 'Comment not found' })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - you are not the author of this comment',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @Auth()
@@ -51,15 +101,19 @@ export class CommentsController {
     @Param() { id: commentId }: ParamsIdDto,
     @Body() body: UpdateCommentDto,
     @CurrentUser() { userId: authorId }: AuthUser,
-  ): Promise<CommentEntity> {
+  ): Promise<CommentResponseDto> {
     return this.commentsService.update(commentId, authorId, body);
   }
 
   @ApiOperation({
     summary: 'Delete comment',
-    description: 'Delete a comment by id.',
+    description:
+      'Delete a comment by id. for root - hard deleting, for reply - soft deleting',
   })
   @ApiNoContentResponse({ description: 'Comment deleted' })
+  @ApiNotFoundResponse({
+    description: 'Comment not found or not yours to delete',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @Auth()
   @Delete(':id')
@@ -76,7 +130,8 @@ export class CommentsController {
     description:
       'Set a like on the comment. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: 200, type: ReactionResponseDto })
+  @ApiOkResponse({ description: 'Reaction updated', type: ReactionResponseDto })
+  @ApiNotFoundResponse({ description: 'Comment not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
@@ -84,7 +139,7 @@ export class CommentsController {
   async like(
     @Param() { id: commentId }: ParamsIdDto,
     @CurrentUser() { userId }: AuthUser,
-  ) {
+  ): Promise<ReactionResponseDto> {
     return this.reactionsService.handleReaction(
       commentId,
       ReactableType.COMMENT,
@@ -98,7 +153,8 @@ export class CommentsController {
     description:
       'Set a dislike on the comment. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: 200, type: ReactionResponseDto })
+  @ApiOkResponse({ description: 'Reaction updated', type: ReactionResponseDto })
+  @ApiNotFoundResponse({ description: 'Comment not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
@@ -106,7 +162,7 @@ export class CommentsController {
   async dislike(
     @Param() { id: commentId }: ParamsIdDto,
     @CurrentUser() { userId }: AuthUser,
-  ) {
+  ): Promise<ReactionResponseDto> {
     return this.reactionsService.handleReaction(
       commentId,
       ReactableType.COMMENT,
@@ -120,7 +176,8 @@ export class CommentsController {
     description:
       'Set or update a reaction on the comment. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: 200, type: ReactionResponseDto })
+  @ApiOkResponse({ description: 'Reaction updated', type: ReactionResponseDto })
+  @ApiNotFoundResponse({ description: 'Comment not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
@@ -129,7 +186,7 @@ export class CommentsController {
     @Param() { id: commentId }: ParamsIdDto,
     @Body() body: { type: ReactionType },
     @CurrentUser() { userId }: AuthUser,
-  ) {
+  ): Promise<ReactionResponseDto> {
     return this.reactionsService.handleReaction(
       commentId,
       ReactableType.COMMENT,
