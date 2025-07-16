@@ -1,35 +1,40 @@
 import {
-  Column,
-  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
+import { User } from '../../user/entities/user.entity';
+import { CommentEntity } from 'src/comments/entities/comment.entity';
 
 @Entity()
 export class PostEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  title: string;
+  @ManyToOne(() => User)
+  author: User;
 
-  @Column('jsonb')
-  content: Record<string, any>;
+  @OneToMany(() => CommentEntity, (comment) => comment.post)
+  comments: CommentEntity[];
 
-  //TODO delete this field or implement logic(draft post => createdAt != publishDate)
-  @CreateDateColumn({ type: 'timestamp' })
-  publishDate: Date;
+  @Column({ type: 'varchar', length: 510, nullable: true })
+  text: string | null;
 
-  //TODO add link to the User entity
-  @Column({ type: 'jsonb' })
-  author: Record<string, any>;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  location: string | null;
 
-  @Column({ default: 0 })
-  likes: number;
+  @Column({ type: 'boolean', default: false })
+  isHidden: boolean;
 
-  @Column({ default: 0 })
-  dislikes: number;
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  imageUrls: string[];
+
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  hashtags: string[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

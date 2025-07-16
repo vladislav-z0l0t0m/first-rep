@@ -8,14 +8,38 @@ import {
   Delete,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PostEntity } from './entities/post.entity';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
+import { PostResponseDto } from './dto/post-response.dto';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
+import { OptionalAuth } from 'src/common/decorators/optional-auth.decorator';
+import {
+  CurrentUser,
+  AuthUser,
+} from '../common/decorators/current-user.decorator';
+import { ReactionsService } from '../reactions/reactions.service';
+import { ReactionType } from '../reactions/constants/reaction-type.enum';
+import { ReactionResponseDto } from '../reactions/dto/reaction-response.dto';
+import { CreateReactionDto } from '../reactions/dto/create-reaction.dto';
+import { CommentResponseDto } from '../comments/dto/comment-response.dto';
+import { CreateCommentDto } from '../comments/dto/create-comment.dto';
+import { CommentsService } from '../comments/comments.service';
+import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
+import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-response.dto';
+import { CursorPaginationDto } from '../common/dto/cursor-pagination.dto';
+import { CursorPaginatedCommentsResponseDto } from 'src/comments/dto/cursor-paginated-comments.dto';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -24,7 +48,11 @@ import { Auth } from 'src/common/decorators/auth.decorator';
 })
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly reactionsService: ReactionsService,
+    private readonly commentsService: CommentsService,
+  ) {}
 
   @ApiOperation({
     summary: 'Create post',
@@ -37,58 +65,121 @@ export class PostsController {
   })
   @Auth()
   @Post()
-  create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
-    return this.postsService.create(createPostDto);
+  create(
+    @Body() createPostDto: CreatePostDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<PostResponseDto> {
+    return this.postsService.create(createPostDto, user);
   }
 
   @ApiOperation({
     summary: 'Like post',
-    description: 'Set a like on the post and return the updated post',
+    description: 'Set a like on the post. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Like added' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
+  @ApiOkResponse({
+    description: 'Reaction status and entity',
+    type: ReactionResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @Post(':id/like')
-  like(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
-    return this.postsService.like(id);
+  async like(
+    @Param() { id: postId }: ParamsIdDto,
+    @CurrentUser() { userId }: AuthUser,
+  ): Promise<ReactionResponseDto> {
+    return this.reactionsService.handleReaction(
+      postId,
+      ReactableType.POST,
+      { type: ReactionType.LIKE },
+      userId,
+    );
   }
 
   @ApiOperation({
     summary: 'Dislike post',
-    description: 'Set a dislike on the post and return the updated post',
+    description:
+      'Set a dislike on the post. If this reaction exists - remove it.',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Dislike added' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
+  @ApiOkResponse({
+    description: 'Reaction status and entity',
+    type: ReactionResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @Post(':id/dislike')
-  dislike(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
-    return this.postsService.dislike(id);
+  async dislike(
+    @Param() { id: postId }: ParamsIdDto,
+    @CurrentUser() { userId }: AuthUser,
+  ): Promise<ReactionResponseDto> {
+    return this.reactionsService.handleReaction(
+      postId,
+      ReactableType.POST,
+      { type: ReactionType.DISLIKE },
+      userId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Set reaction',
+    description:
+      'Set or update a reaction on the post. If this reaction exists - remove it.',
+  })
+  @ApiOkResponse({
+    description: 'Reaction status and entity',
+    type: ReactionResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/reactions')
+  async setReaction(
+    @Param() { id: postId }: ParamsIdDto,
+    @Body() createReactionDto: CreateReactionDto,
+    @CurrentUser() { userId }: AuthUser,
+  ): Promise<ReactionResponseDto> {
+    return this.reactionsService.handleReaction(
+      postId,
+      ReactableType.POST,
+      createReactionDto,
+      userId,
+    );
   }
 
   @ApiOperation({
     summary: 'Get all posts',
-    description: 'Return array of all posts',
+    description:
+      'Return array of all posts. Authenticated users will see their reactions.',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Posts returned' })
+  @OptionalAuth()
   @Get()
-  findAll(): Promise<PostEntity[]> {
-    return this.postsService.findAll();
+  findAll(
+    @Query() paginationDto: CursorPaginationDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<CursorPaginatedPostsResponseDto> {
+    return this.postsService.findAll(paginationDto, user?.userId);
   }
 
   @ApiOperation({
     summary: 'Get single post',
-    description: 'Return one post by its ID',
+    description:
+      'Return one post by its ID. Authenticated users will see their reactions.',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Post returned' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @OptionalAuth()
   @Get(':id')
-  findOne(@Param() { id }: ParamsIdDto): Promise<PostEntity> {
-    return this.postsService.findOne(id);
+  findOne(
+    @Param() { id }: ParamsIdDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<PostResponseDto> {
+    return this.postsService.findOne(id, user?.userId);
   }
 
   @ApiOperation({
@@ -103,8 +194,9 @@ export class PostsController {
   update(
     @Param() { id }: ParamsIdDto,
     @Body() updatePostDto: UpdatePostDto,
-  ): Promise<PostEntity> {
-    return this.postsService.update(id, updatePostDto);
+    @CurrentUser() user: AuthUser,
+  ): Promise<PostResponseDto> {
+    return this.postsService.update(id, updatePostDto, user.userId);
   }
 
   @ApiOperation({
@@ -117,7 +209,53 @@ export class PostsController {
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  remove(@Param() { id }: ParamsIdDto): Promise<void> {
-    return this.postsService.remove(id);
+  remove(
+    @Param() { id }: ParamsIdDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<void> {
+    return this.postsService.remove(id, user.userId);
+  }
+
+  @ApiOperation({
+    summary: 'Create comment',
+    description: 'Create a new comment for the post.',
+  })
+  @ApiResponse({
+    status: 201,
+    type: CommentResponseDto,
+    description: 'Created comment',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Auth()
+  @Post(':id/comments')
+  async createComment(
+    @Param() { id: postId }: ParamsIdDto,
+    @Body() createCommentDto: CreateCommentDto,
+    @CurrentUser() { userId: authorId }: AuthUser,
+  ): Promise<CommentResponseDto> {
+    return this.commentsService.create(postId, authorId, createCommentDto);
+  }
+
+  @ApiOperation({
+    summary: 'Get post comments',
+    description: 'Get all comments for the post.',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [CommentResponseDto],
+    description: 'List of comments',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Get(':id/comments')
+  async getPostComments(
+    @Param() { id: postId }: ParamsIdDto,
+    @Query() paginationDto: CursorPaginationDto,
+    @CurrentUser() user?: AuthUser,
+  ): Promise<CursorPaginatedCommentsResponseDto> {
+    return this.commentsService.findPostRootComments(
+      postId,
+      paginationDto,
+      user?.userId,
+    );
   }
 }

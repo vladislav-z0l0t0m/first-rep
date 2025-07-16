@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AdminModule } from './admin/admin.module';
 import { InternalAuthModule } from './internal-auth/internal-auth.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { InternalAuthModule } from './internal-auth/internal-auth.module';
     UserModule,
     PostsModule,
     InternalAuthModule,
+    CommonModule,
     ...(process.env.NODE_ENV !== 'production' ? [AdminModule] : []),
   ],
   controllers: [AppController],

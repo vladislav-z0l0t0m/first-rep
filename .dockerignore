@@ -3,3 +3,6 @@ dist
 .env
 .dockerignore
 Dockerfile
+uploads/
+uploads/temp/
+*.tmp

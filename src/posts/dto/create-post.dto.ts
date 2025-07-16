@@ -1,29 +1,59 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+} from 'class-validator';
 
 export class CreatePostDto {
   @ApiProperty({
-    description: 'title',
+    description: 'Post text',
     type: String,
-    example: 'House of dragon',
+    example: 'Some post text',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  title: string;
+  @IsOptional()
+  text?: string;
 
   @ApiProperty({
-    description: 'content',
-    type: Object,
-    example: 'group of pictures',
+    description: 'Location',
+    type: String,
+    required: false,
+    example: 'New York',
   })
-  @IsNotEmpty()
-  content: any;
+  @IsString()
+  @IsOptional()
+  location?: string;
 
   @ApiProperty({
-    description: 'author',
-    type: Object,
-    example: 'Name Sn. Ln.',
+    description: 'Is post hidden',
+    type: Boolean,
+    required: false,
+    default: false,
   })
+  @IsBoolean()
+  @IsOptional()
+  isHidden?: boolean = false;
+
+  @ApiProperty({
+    description: 'Image URLs',
+    type: [String],
+    example: ['https://minio/image1.jpg'],
+  })
+  @IsArray()
   @IsNotEmpty()
-  author: any;
+  imageUrls: string[];
+
+  @ApiProperty({
+    description: 'Hashtags',
+    type: [String],
+    required: false,
+    example: ['#tag1', '#tag2'],
+  })
+  @IsArray()
+  @IsOptional()
+  hashtags?: string[];
 }
