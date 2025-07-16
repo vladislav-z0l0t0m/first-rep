@@ -17,6 +17,8 @@ import { ReactableType } from '../reactions/constants/reactable-type.enum';
 import { CursorPaginationDto } from '../common/dto/cursor-pagination.dto';
 import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-response.dto';
 import { CommentsService } from 'src/comments/comments.service';
+import { MinioService } from '../common/services/minio.service';
+import { BucketType } from '../common/enums/file-type.enum';
 
 @Injectable()
 export class PostsService {
@@ -26,6 +28,7 @@ export class PostsService {
     private reactionsService: ReactionsService,
     @Inject(forwardRef(() => CommentsService))
     private commentsService: CommentsService,
+    private minioService: MinioService,
   ) {}
 
   async create(post: CreatePostDto, user: AuthUser): Promise<PostResponseDto> {
@@ -118,6 +121,13 @@ export class PostsService {
 
     if (post.author.id !== currentUserId) {
       throw new ForbiddenException('You are not allowed to delete this post');
+    }
+
+    if (post.imageUrls && post.imageUrls.length > 0) {
+      await this.minioService.deleteMultipleFiles(
+        BucketType.POSTS,
+        post.imageUrls,
+      );
     }
 
     await this.postsRepository.remove(post);
