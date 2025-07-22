@@ -7,6 +7,7 @@ import {
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import { ERROR_MESSAGES } from '../constants/error-messages.constants';
 
 interface JwtPayload {
   userId: number;
@@ -23,7 +24,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      throw new UnauthorizedException('No token provided');
+      throw new UnauthorizedException(ERROR_MESSAGES.NO_TOKEN);
     }
 
     try {
@@ -34,7 +35,7 @@ export class JwtAuthGuard implements CanActivate {
       request['user'] = { userId: payload.userId };
       return true;
     } catch {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
   }
 

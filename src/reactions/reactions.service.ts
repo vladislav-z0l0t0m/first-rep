@@ -9,6 +9,7 @@ import { ReactionEntity } from './reaction.entity';
 import { ReactableType } from './constants/reactable-type.enum';
 import { CommentEntity } from 'src/comments/entities/comment.entity';
 import { ReactionType } from './constants/reaction-type.enum';
+import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 @Injectable()
 export class ReactionsService {
@@ -149,14 +150,16 @@ export class ReactionsService {
     const entityClass = this.reactableEntities.get(type);
 
     if (!entityClass) {
-      throw new NotFoundException(`Reactable type "${type}" is not supported.`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.REACTABLE_TYPE_NOT_SUPPORTED(type),
+      );
     }
 
     const entityRepository = this.dataSource.getRepository(entityClass);
     const exists = await entityRepository.exists({ where: { id } });
 
     if (!exists) {
-      throw new NotFoundException(`${type} with ID ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.REACTABLE_NOT_FOUND(type, id));
     }
   }
 }

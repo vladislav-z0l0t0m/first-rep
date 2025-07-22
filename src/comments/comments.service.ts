@@ -22,6 +22,7 @@ import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
 import { CursorPaginatedCommentsResponseDto } from './dto/cursor-paginated-comments.dto';
 import { CursorPaginationDto } from 'src/common/dto/cursor-pagination.dto';
 import { PostsService } from 'src/posts/posts.service';
+import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 interface RepliesCountResult {
   parentId: number;
@@ -71,7 +72,7 @@ export class CommentsService {
       withDeleted: true,
     });
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw new NotFoundException(ERROR_MESSAGES.COMMENT_NOT_FOUND(commentId));
     }
 
     const repliesCount = await this.commentsRepository.count({
@@ -137,7 +138,9 @@ export class CommentsService {
       id: parentId,
     });
     if (!parentComment) {
-      throw new NotFoundException('Parent comment not found');
+      throw new NotFoundException(
+        ERROR_MESSAGES.PARENT_COMMENT_NOT_FOUND(parentId),
+      );
     }
 
     const descendants =
@@ -205,10 +208,10 @@ export class CommentsService {
       relations: ['author'],
     });
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw new NotFoundException(ERROR_MESSAGES.COMMENT_NOT_FOUND(commentId));
     }
     if (comment.author.id !== authorId) {
-      throw new ForbiddenException('You are not the author of this comment');
+      throw new ForbiddenException(ERROR_MESSAGES.NOT_AUTHOR_FORBIDDEN);
     }
 
     comment.text = dto.text;
@@ -223,12 +226,10 @@ export class CommentsService {
       relations: ['parent', 'author'],
     });
     if (!commentToRemove) {
-      throw new NotFoundException(`Comment with ID ${commentId} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.COMMENT_NOT_FOUND(commentId));
     }
     if (commentToRemove.author.id !== authorId) {
-      throw new ForbiddenException(
-        'You are not allowed to delete this comment',
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.NOT_AUTHOR_FORBIDDEN);
     }
 
     if (commentToRemove.parent === null) {
@@ -245,7 +246,7 @@ export class CommentsService {
       where: { id: commentId },
     });
     if (!exists) {
-      throw new NotFoundException(`Comment with ID ${commentId} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.COMMENT_NOT_FOUND(commentId));
     }
   }
 

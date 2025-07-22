@@ -19,6 +19,7 @@ import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-res
 import { CommentsService } from 'src/comments/comments.service';
 import { MinioService } from '../common/services/minio.service';
 import { BucketType } from '../common/enums/file-type.enum';
+import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 @Injectable()
 export class PostsService {
@@ -107,7 +108,7 @@ export class PostsService {
     const post = await this.findPostById(id);
 
     if (post.author.id !== currentUserId) {
-      throw new ForbiddenException('You are not allowed to update this post');
+      throw new ForbiddenException(ERROR_MESSAGES.NOT_AUTHOR_FORBIDDEN);
     }
 
     this.postsRepository.merge(post, dto);
@@ -120,7 +121,7 @@ export class PostsService {
     const post = await this.findPostById(id);
 
     if (post.author.id !== currentUserId) {
-      throw new ForbiddenException('You are not allowed to delete this post');
+      throw new ForbiddenException(ERROR_MESSAGES.NOT_AUTHOR_FORBIDDEN);
     }
 
     if (post.imageUrls && post.imageUrls.length > 0) {
@@ -139,7 +140,7 @@ export class PostsService {
     });
 
     if (!exists) {
-      throw new NotFoundException(`Post with ID ${postId} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.POST_NOT_FOUND(postId));
     }
   }
 
@@ -150,7 +151,7 @@ export class PostsService {
     });
 
     if (!post) {
-      throw new NotFoundException(`Post with id: ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.POST_NOT_FOUND(id));
     }
 
     return post;

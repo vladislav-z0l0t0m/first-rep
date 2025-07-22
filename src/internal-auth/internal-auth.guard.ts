@@ -7,6 +7,7 @@ import {
 import { Request } from 'express';
 import { timingSafeEqual } from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 @Injectable()
 export class InternalAuthGuard implements CanActivate {
@@ -17,13 +18,15 @@ export class InternalAuthGuard implements CanActivate {
     const apiKey = request.headers['x-internal-api-key'];
 
     if (typeof apiKey !== 'string') {
-      throw new UnauthorizedException('Missing internal API key header');
+      throw new UnauthorizedException(ERROR_MESSAGES.MISSING_INTERNAL_API_KEY);
     }
 
     const internalApiKey = this.configService.get<string>('INTERNAL_API_KEY');
 
     if (!internalApiKey) {
-      throw new UnauthorizedException('Internal API key not configured');
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.INTERNAL_API_KEY_NOT_CONFIGURED,
+      );
     }
 
     try {
@@ -33,11 +36,15 @@ export class InternalAuthGuard implements CanActivate {
       );
 
       if (!isValid) {
-        throw new UnauthorizedException('Invalid internal API key value');
+        throw new UnauthorizedException(
+          ERROR_MESSAGES.INVALID_INTERNAL_API_KEY,
+        );
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
     } catch (error) {
-      throw new UnauthorizedException('Internal API key format error');
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.INTERNAL_API_KEY_FORMAT_ERROR,
+      );
     }
 
     return true;
