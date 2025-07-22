@@ -3,11 +3,9 @@ import {
   Post,
   UploadedFiles,
   UseInterceptors,
-  UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { FileService } from '../services/file.service';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser, AuthUser } from '../decorators/current-user.decorator';
 import { UseMulterExceptionFilter } from '../decorators/use-multer-exception-filter.decorator';
 import { MINIO_CONSTANTS } from '../constants/minio.constants';
@@ -20,6 +18,7 @@ import {
   ApiUnauthorizedResponse,
   ApiInternalServerErrorResponse,
 } from '@nestjs/swagger';
+import { Auth } from '../decorators/auth.decorator';
 
 @ApiTags('Files')
 @ApiBearerAuth()
@@ -27,7 +26,7 @@ import {
   description: 'Internal server error',
 })
 @Controller('files')
-@UseGuards(JwtAuthGuard)
+@Auth()
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
