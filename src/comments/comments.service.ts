@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Inject,
   forwardRef,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -174,7 +175,7 @@ export class CommentsService {
           }),
         );
       } catch {
-        return { comments: [], nextCursor: null };
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_CURSOR);
       }
     }
 
@@ -323,19 +324,19 @@ export class CommentsService {
       const [dateString, idString] = decoded.split('_');
 
       if (!dateString || !idString) {
-        throw new Error('Invalid cursor format');
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_CURSOR_FORMAT);
       }
 
       const createdAt = new Date(dateString);
       const id = parseInt(idString, 10);
 
       if (isNaN(createdAt.getTime()) || isNaN(id)) {
-        throw new Error('Invalid cursor data');
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_CURSOR_DATA);
       }
 
       return { createdAt, id };
     } catch {
-      throw new Error('Invalid cursor');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_CURSOR);
     }
   }
 }

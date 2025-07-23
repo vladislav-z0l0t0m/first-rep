@@ -36,7 +36,7 @@ export class MinioService implements OnModuleInit {
     file: Express.Multer.File,
     folder?: string,
   ): Promise<string> {
-    const fileExtension = this.getFileExtension(file.originalname);
+    const fileExtension = getFileExtension(file.originalname);
     const fileName = `${folder || MINIO_CONSTANTS.FOLDERS.IMAGES}/${uuidv4()}.${fileExtension}`;
     await this.minioClient.putObject(
       bucketName,
@@ -97,10 +97,6 @@ export class MinioService implements OnModuleInit {
     const endpoint = this.configService.get<string>('MINIO_ENDPOINT');
     const port = this.configService.get<number>('MINIO_PORT');
     return `${protocol}://${endpoint}:${port}/${bucketName}/${objectName}`;
-  }
-
-  private getFileExtension(filename: string): string {
-    return getFileExtension(filename);
   }
 
   private getObjectNameFromUrl(fileUrl: string): string {

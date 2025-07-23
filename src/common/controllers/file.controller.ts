@@ -30,7 +30,7 @@ import { Auth } from '../decorators/auth.decorator';
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
-  @Post('upload')
+  @Post('upload-post')
   @UseInterceptors(
     FilesInterceptor('files', MINIO_CONSTANTS.FILE_LIMITS.MAX_FILES),
   )

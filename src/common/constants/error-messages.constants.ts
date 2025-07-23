@@ -33,6 +33,9 @@ export const ERROR_MESSAGES = {
   INTERNAL_API_KEY_NOT_CONFIGURED: 'Internal API key not configured',
   INVALID_INTERNAL_API_KEY: 'Invalid internal API key value',
   INTERNAL_API_KEY_FORMAT_ERROR: 'Internal API key format error',
+  INVALID_CURSOR: 'Invalid cursor',
+  INVALID_CURSOR_FORMAT: 'Invalid cursor format',
+  INVALID_CURSOR_DATA: 'Invalid cursor data',
 
   INTERNAL_SERVER_ERROR: 'Internal server error',
   FILE_SIZE_EXCEEDS: 'File size exceeds the limit',
