@@ -54,6 +54,7 @@ import {
   UploadFilesSuccessResponseDto,
 } from '../common/dto/upload-files-response.dto';
 import { FileService } from '../common/services/file.service';
+import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -304,7 +305,10 @@ export class PostsController {
     if (failed.length > 0) {
       res.status(HttpStatus.MULTI_STATUS);
       return {
-        message: `${successful.length} of ${files.length} files uploaded successfully.`,
+        message: ERROR_MESSAGES.UPLOAD_PARTIAL_SUCCESS(
+          successful.length,
+          files.length,
+        ),
         successful,
         failed,
       };

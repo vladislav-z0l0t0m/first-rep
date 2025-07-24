@@ -4,7 +4,7 @@ import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CursorPaginationDto {
   @ApiPropertyOptional({
-    description: 'Курсор для получения следующей страницы данных',
+    description: 'Cursor for fetching the next page of data',
     type: String,
   })
   @IsOptional()
@@ -12,7 +12,7 @@ export class CursorPaginationDto {
   cursor?: string;
 
   @ApiPropertyOptional({
-    description: 'Количество элементов на странице',
+    description: 'Number of items per page',
     default: 5,
     minimum: 1,
     maximum: 50,

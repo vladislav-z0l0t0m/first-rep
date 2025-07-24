@@ -42,4 +42,6 @@ export const ERROR_MESSAGES = {
   TOO_MANY_FILES: 'Too many files uploaded',
   INVALID_FILE_TYPE: 'Invalid file type. Only images are allowed.',
   UNEXPECTED_FILE_FIELD: 'Unexpected file field',
+  UPLOAD_PARTIAL_SUCCESS: (success: number, total: number) =>
+    `${success} of ${total} files uploaded successfully.`,
 };

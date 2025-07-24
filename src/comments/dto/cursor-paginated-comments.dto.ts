@@ -3,14 +3,13 @@ import { CommentResponseDto } from './comment-response.dto';
 
 export class CursorPaginatedCommentsResponseDto {
   @ApiProperty({
-    description: 'Массив данных для текущей страницы',
+    description: 'Array of data for the current page',
     type: [CommentResponseDto],
   })
   comments: CommentResponseDto[];
 
   @ApiProperty({
-    description:
-      'Курсор для запроса следующей страницы. null, если данных больше нет.',
+    description: 'Cursor for the next page. Null if there is no more data.',
     type: String,
     nullable: true,
   })

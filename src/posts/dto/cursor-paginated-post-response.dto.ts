@@ -3,14 +3,13 @@ import { PostResponseDto } from './post-response.dto';
 
 export class CursorPaginatedPostsResponseDto {
   @ApiProperty({
-    description: 'Массив данных для текущей страницы',
+    description: 'Array of data for the current page',
     type: [PostResponseDto],
   })
   posts: PostResponseDto[];
 
   @ApiProperty({
-    description:
-      'Курсор для запроса следующей страницы. null, если данных больше нет.',
+    description: 'Cursor for the next page',
     type: String,
     nullable: true,
   })

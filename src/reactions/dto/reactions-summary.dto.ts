@@ -8,13 +8,13 @@ interface ReactionData {
 
 export class ReactionsSummaryDto {
   @ApiProperty({
-    description: 'Общее количество каждого типа реакции',
+    description: 'Total count for each reaction type',
     example: { like: 15, laugh: 3 },
   })
   counts: Record<ReactionType, number>;
 
   @ApiProperty({
-    description: 'Реакция текущего пользователя, если она есть',
+    description: 'Current user reaction, if present',
     enum: ReactionType,
     nullable: true,
     example: 'like',
