@@ -249,6 +249,7 @@ export class PostsController {
     @Body() createCommentDto: CreateCommentDto,
     @CurrentUser() { userId: authorId }: AuthUser,
   ): Promise<CommentResponseDto> {
+    await this.postsService.ensurePostExists(postId);
     return this.commentsService.create(postId, authorId, createCommentDto);
   }
 

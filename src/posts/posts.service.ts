@@ -2,8 +2,6 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -27,7 +25,6 @@ export class PostsService {
     @InjectRepository(PostEntity)
     private postsRepository: Repository<PostEntity>,
     private reactionsService: ReactionsService,
-    @Inject(forwardRef(() => CommentsService))
     private commentsService: CommentsService,
     private minioService: MinioService,
   ) {}

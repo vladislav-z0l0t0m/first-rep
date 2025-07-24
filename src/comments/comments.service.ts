@@ -2,8 +2,6 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  Inject,
-  forwardRef,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,7 +20,6 @@ import { ReactionsService } from '../reactions/reactions.service';
 import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
 import { CursorPaginatedCommentsResponseDto } from './dto/cursor-paginated-comments.dto';
 import { CursorPaginationDto } from 'src/common/dto/cursor-pagination.dto';
-import { PostsService } from 'src/posts/posts.service';
 import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 interface RepliesCountResult {
@@ -36,8 +33,6 @@ export class CommentsService {
     @InjectRepository(CommentEntity)
     private commentsRepository: TreeRepository<CommentEntity>,
     private reactionsService: ReactionsService,
-    @Inject(forwardRef(() => PostsService))
-    private postsService: PostsService,
   ) {}
 
   async create(
@@ -45,8 +40,6 @@ export class CommentsService {
     authorId: number,
     dto: CreateCommentDto,
   ): Promise<CommentResponseDto> {
-    await this.postsService.ensurePostExists(postId);
-
     if (dto.parentId) {
       await this.ensureCommentExists(dto.parentId);
     }
