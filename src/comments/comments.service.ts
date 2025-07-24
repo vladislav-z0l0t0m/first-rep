@@ -60,7 +60,7 @@ export class CommentsService {
 
     const savedComment = await this.commentsRepository.save(comment);
 
-    return this.findOne(savedComment.id, authorId);
+    return CommentResponseDto.fromEntity(savedComment, []);
   }
 
   async findOne(
@@ -87,8 +87,8 @@ export class CommentsService {
     return CommentResponseDto.fromEntity(
       comment,
       reactions,
-      repliesCount,
       currentUserId,
+      repliesCount,
     );
   }
 
@@ -218,7 +218,21 @@ export class CommentsService {
     comment.text = dto.text;
     await this.commentsRepository.save(comment);
 
-    return this.findOne(commentId, authorId);
+    const repliesCount = await this.commentsRepository.count({
+      where: { parent: { id: commentId } },
+    });
+
+    const reactions = await this.reactionsService.findByReactable(
+      commentId,
+      ReactableType.COMMENT,
+    );
+
+    return CommentResponseDto.fromEntity(
+      comment,
+      reactions,
+      authorId,
+      repliesCount,
+    );
   }
 
   async remove(commentId: number, authorId: number): Promise<void> {
