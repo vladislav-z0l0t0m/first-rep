@@ -1,5 +1,3 @@
-x-paths:
-  data-path: &data-path D:/programming/learn_node_js/first_app/data
 services:
   postgres:
     image: postgres:15
@@ -12,7 +10,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - *data-path/postgres:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     networks:
       - app-network
 
@@ -27,7 +25,7 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - *data-path/mongodb:/data/db
+      - ./data/mongodb:/data/db
     networks:
       - app-network
 
@@ -116,7 +114,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
-      - *data-path/minio:/data
+      - ./data/minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']

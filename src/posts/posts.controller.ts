@@ -9,6 +9,9 @@ import {
   HttpStatus,
   HttpCode,
   Query,
+  UseInterceptors,
+  UploadedFiles,
+  Res,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -20,6 +23,9 @@ import {
   ApiTags,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { PostResponseDto } from './dto/post-response.dto';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
@@ -40,6 +46,14 @@ import { ReactableType } from 'src/reactions/constants/reactable-type.enum';
 import { CursorPaginatedPostsResponseDto } from './dto/cursor-paginated-post-response.dto';
 import { CursorPaginationDto } from '../common/dto/cursor-pagination.dto';
 import { CursorPaginatedCommentsResponseDto } from 'src/comments/dto/cursor-paginated-comments.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { MINIO_CONSTANTS } from '../common/constants/minio.constants';
+import { Response } from 'express';
+import {
+  UploadFilesPartialResponseDto,
+  UploadFilesSuccessResponseDto,
+} from '../common/dto/upload-files-response.dto';
+import { FileService } from '../common/services/file.service';
 
 @ApiTags('Posts')
 @ApiResponse({
@@ -52,6 +66,7 @@ export class PostsController {
     private readonly postsService: PostsService,
     private readonly reactionsService: ReactionsService,
     private readonly commentsService: CommentsService,
+    private readonly fileService: FileService,
   ) {}
 
   @ApiOperation({
@@ -257,5 +272,44 @@ export class PostsController {
       paginationDto,
       user?.userId,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Upload images for post',
+    description:
+      'Upload one or multiple images for a post and return their upload status',
+  })
+  @ApiCreatedResponse({ type: UploadFilesSuccessResponseDto })
+  @ApiResponse({ status: 207, type: UploadFilesPartialResponseDto })
+  @ApiBadRequestResponse({
+    description: 'Invalid file type or file size exceeds limit',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - JWT token required' })
+  @Auth()
+  @Post(':id/images')
+  @UseInterceptors(
+    FilesInterceptor('files', MINIO_CONSTANTS.FILE_LIMITS.MAX_FILES),
+  )
+  async uploadPostImages(
+    @Param() { id: postId }: ParamsIdDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<UploadFilesSuccessResponseDto | UploadFilesPartialResponseDto> {
+    const folder = `user-${user.userId}/post-${postId}`;
+    const { successful, failed } = await this.fileService.uploadPostFiles(
+      files,
+      folder,
+    );
+    if (failed.length > 0) {
+      res.status(HttpStatus.MULTI_STATUS);
+      return {
+        message: `${successful.length} of ${files.length} files uploaded successfully.`,
+        successful,
+        failed,
+      };
+    }
+    res.status(HttpStatus.CREATED);
+    return { successful };
   }
 }

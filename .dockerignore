@@ -6,3 +6,4 @@ Dockerfile
 uploads/
 uploads/temp/
 *.tmp
+data/

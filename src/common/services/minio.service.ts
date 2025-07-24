@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { MINIO_CONSTANTS } from '../constants/minio.constants';
 import { BucketType } from '../enums/file-type.enum';
 import { getFileExtension } from '../utils/file.utils';
+import { UploadResult } from '../models/upload-result.model';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
@@ -32,7 +33,7 @@ export class MinioService implements OnModuleInit {
   }
 
   async uploadFile(
-    bucketName: BucketType | string,
+    bucketName: BucketType,
     file: Express.Multer.File,
     folder?: string,
   ): Promise<string> {
@@ -53,34 +54,51 @@ export class MinioService implements OnModuleInit {
   }
 
   async uploadMultipleFiles(
-    bucketName: BucketType | string,
+    bucketName: BucketType,
     files: Express.Multer.File[],
     folder?: string,
-  ): Promise<string[]> {
+  ): Promise<UploadResult> {
     const uploadPromises = files.map((file) =>
       this.uploadFile(bucketName, file, folder),
     );
-    return Promise.all(uploadPromises);
+
+    const results = await Promise.allSettled(uploadPromises);
+
+    return results.reduce<UploadResult>(
+      (acc, result, index) => {
+        if (result.status === 'fulfilled') {
+          acc.successful.push({
+            filename: files[index].originalname,
+            url: result.value,
+          });
+        } else {
+          let errorMessage = 'An unknown error occurred';
+
+          if (result.reason instanceof Error) {
+            errorMessage = result.reason.message;
+          } else if (typeof result.reason === 'string') {
+            errorMessage = result.reason;
+          }
+
+          acc.failed.push({
+            filename: files[index].originalname,
+            message: errorMessage,
+          });
+        }
+        return acc;
+      },
+      { successful: [], failed: [] },
+    );
   }
 
-  async uploadPostFiles(
-    files: Express.Multer.File[],
-    folder?: string,
-  ): Promise<string[]> {
-    return this.uploadMultipleFiles(BucketType.POSTS, files, folder);
-  }
-
-  async deleteFile(
-    bucketName: BucketType | string,
-    fileUrl: string,
-  ): Promise<void> {
+  async deleteFile(bucketName: BucketType, fileUrl: string): Promise<void> {
     const objectName = this.getObjectNameFromUrl(fileUrl);
     await this.minioClient.removeObject(bucketName, objectName);
     this.logger.log(`File deleted successfully: ${fileUrl}`);
   }
 
   async deleteMultipleFiles(
-    bucketName: BucketType | string,
+    bucketName: BucketType,
     fileUrls: string[],
   ): Promise<void> {
     const deletePromises = fileUrls.map((url) =>
@@ -89,7 +107,7 @@ export class MinioService implements OnModuleInit {
     await Promise.all(deletePromises);
   }
 
-  getFileUrl(bucketName: BucketType | string, objectName: string): string {
+  getFileUrl(bucketName: BucketType, objectName: string): string {
     const protocol =
       this.configService.get<string>('MINIO_USE_SSL') === 'true'
         ? 'https'
