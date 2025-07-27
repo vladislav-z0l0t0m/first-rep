@@ -32,7 +32,7 @@ import { ReactionType } from '../reactions/constants/reaction-type.enum';
 import { ReactionResponseDto } from '../reactions/dto/reaction-response.dto';
 import { ReactableType } from '../reactions/constants/reactable-type.enum';
 import { CommentResponseDto } from './dto/comment-response.dto';
-import { OptionalAuth } from 'src/common/decorators/optional-auth.decorator';
+
 import { CursorPaginatedCommentsResponseDto } from './dto/cursor-paginated-comments.dto';
 import { CursorPaginationDto } from 'src/common/dto/cursor-pagination.dto';
 
@@ -52,11 +52,11 @@ export class CommentsController {
   @ApiOkResponse({ description: 'Comment returned', type: CommentResponseDto })
   @ApiNotFoundResponse({ description: 'Comment not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
-  @OptionalAuth()
+  @Auth()
   @Get(':id')
   async getComment(
     @Param() { id: commentId }: ParamsIdDto,
-    @CurrentUser() user?: AuthUser,
+    @CurrentUser() user: AuthUser | null,
   ): Promise<CommentResponseDto> {
     return this.commentsService.findOne(commentId, user?.userId);
   }
@@ -71,12 +71,12 @@ export class CommentsController {
   })
   @ApiNotFoundResponse({ description: 'Comment not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
-  @OptionalAuth()
+  @Auth()
   @Get(':id/replies')
   async getCommentsReplies(
     @Param() { id: commentId }: ParamsIdDto,
     @Query() paginationDto: CursorPaginationDto,
-    @CurrentUser() user?: AuthUser,
+    @CurrentUser() user: AuthUser | null,
   ): Promise<CursorPaginatedCommentsResponseDto> {
     return this.commentsService.findRepliesForComment(
       commentId,

@@ -30,7 +30,6 @@ import {
 import { PostResponseDto } from './dto/post-response.dto';
 import { ParamsIdDto } from '../common/dto/params-id.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
-import { OptionalAuth } from 'src/common/decorators/optional-auth.decorator';
 import {
   CurrentUser,
   AuthUser,
@@ -172,11 +171,11 @@ export class PostsController {
       'Return array of all posts. Authenticated users will see their reactions.',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Posts returned' })
-  @OptionalAuth()
+  @Auth()
   @Get()
   findAll(
     @Query() paginationDto: CursorPaginationDto,
-    @CurrentUser() user?: AuthUser,
+    @CurrentUser() user: AuthUser | null,
   ): Promise<CursorPaginatedPostsResponseDto> {
     return this.postsService.findAll(paginationDto, user?.userId);
   }
@@ -189,11 +188,11 @@ export class PostsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Post returned' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Post not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
-  @OptionalAuth()
+  @Auth()
   @Get(':id')
   findOne(
     @Param() { id }: ParamsIdDto,
-    @CurrentUser() user?: AuthUser,
+    @CurrentUser() user: AuthUser | null,
   ): Promise<PostResponseDto> {
     return this.postsService.findOne(id, user?.userId);
   }
@@ -263,11 +262,12 @@ export class PostsController {
     description: 'List of comments',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @Auth()
   @Get(':id/comments')
   async getPostComments(
     @Param() { id: postId }: ParamsIdDto,
     @Query() paginationDto: CursorPaginationDto,
-    @CurrentUser() user?: AuthUser,
+    @CurrentUser() user: AuthUser | null,
   ): Promise<CursorPaginatedCommentsResponseDto> {
     return this.commentsService.findPostRootComments(
       postId,

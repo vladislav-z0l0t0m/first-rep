@@ -6,10 +6,10 @@ export interface AuthUser {
 }
 
 export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): AuthUser | undefined => {
+  (data: unknown, ctx: ExecutionContext): AuthUser | null => {
     const request = ctx
       .switchToHttp()
       .getRequest<Request & { user: AuthUser | null }>();
-    return request['user'] || undefined;
+    return request.user;
   },
 );
