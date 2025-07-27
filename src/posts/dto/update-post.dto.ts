@@ -1,4 +1,6 @@
-import { PickType } from "@nestjs/swagger";
-import { CreatePostDto } from "./create-post.dto";
+import { PartialType, OmitType } from '@nestjs/swagger';
+import { CreatePostDto } from './create-post.dto';
 
-export class UpdatePostDto extends PickType(CreatePostDto, ['title'] as const) {}
+export class UpdatePostDto extends OmitType(PartialType(CreatePostDto), [
+  'imageUrls',
+] as const) {}
