@@ -15,10 +15,12 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { HashingService } from 'src/common/services/hashing.service';
+import { AuthApiService } from 'src/common/services/auth-api.service';
 import { IdentifierType } from 'src/common/constants/identifier-type.enum';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { AuthenticateUserDto } from './dto/authenticate-user.dto';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
+import { ERROR_MESSAGES } from '../common/constants/error-messages.constants';
 
 @Injectable()
 export class UserService {
@@ -26,6 +28,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly hashingService: HashingService,
+    private readonly authApiService: AuthApiService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -73,7 +76,7 @@ export class UserService {
     const user = await this.findUserById(id);
 
     if (!user.password)
-      throw new ForbiddenException('This account does not have a password');
+      throw new ForbiddenException(ERROR_MESSAGES.USER_NO_PASSWORD);
 
     const isOldPasswordCorrect = await this.hashingService.compare(
       updatePasswordDto.oldPassword,
@@ -81,46 +84,45 @@ export class UserService {
     );
 
     if (!isOldPasswordCorrect) {
-      throw new ForbiddenException('Invalid old password.');
+      throw new ForbiddenException(ERROR_MESSAGES.USER_INVALID_OLD_PASSWORD);
     }
 
     if (updatePasswordDto.oldPassword === updatePasswordDto.newPassword) {
-      throw new BadRequestException(
-        'New password cannot be the same as the old password.',
-      );
+      throw new BadRequestException(ERROR_MESSAGES.USER_NEW_PASSWORD_SAME);
     }
 
     user.password = await this.hashingService.hash(
       updatePasswordDto.newPassword,
     );
     await this.userRepository.save(user);
+    await this.authApiService.revokeUserTokens(id);
   }
 
   async setPassword(id: number, setPasswordDto: SetPasswordDto): Promise<void> {
     const user = await this.findUserById(id);
 
-    if (user.password)
-      throw new BadRequestException('This account already has a password');
+    if (user.password) {
+      throw new BadRequestException(ERROR_MESSAGES.USER_ALREADY_HAS_PASSWORD);
+    }
 
     user.password = await this.hashingService.hash(setPasswordDto.password);
 
     await this.userRepository.save(user);
+    await this.authApiService.revokeUserTokens(id);
   }
 
   async remove(id: number): Promise<UserResponseDto> {
     const user = await this.findUserById(id);
     const removedUser = await this.userRepository.remove(user);
+    await this.authApiService.revokeUserTokens(id);
     return this.mapToDto(removedUser);
-  }
-
-  async removeAll(): Promise<void> {
-    await this.userRepository.clear();
   }
 
   private async findUserById(id: number): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
 
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    if (!user)
+      throw new NotFoundException(ERROR_MESSAGES.USER_WITH_ID_NOT_FOUND(id));
 
     return user;
   }
@@ -138,7 +140,7 @@ export class UserService {
 
     if (existing) {
       throw new ConflictException(
-        `${field.charAt(0).toUpperCase() + field.slice(1)} '${value}' is already in use`,
+        ERROR_MESSAGES.USER_ALREADY_EXISTS(field, value),
       );
     }
   }
@@ -183,7 +185,9 @@ export class UserService {
     const user = await this.userRepository.findOneBy({ [field]: value });
 
     if (!user) {
-      throw new NotFoundException(`User with ${field}: ${value} not found`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.USER_WITH_FIELD_NOT_FOUND(field, value),
+      );
     }
 
     return user;
@@ -255,7 +259,7 @@ export class UserService {
       authenticateUserDto.identifier,
     );
     if (!user.password) {
-      throw new UnauthorizedException('This account does not have a password');
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NO_PASSWORD);
     }
 
     const isPasswordValid = await this.hashingService.compare(
@@ -264,7 +268,7 @@ export class UserService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_INVALID_PASSWORD);
     }
 
     return this.mapToDto(user);

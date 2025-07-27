@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpStatus,
-  HttpCode,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,8 +24,6 @@ import {
 } from '@nestjs/swagger';
 import { UserResponseDto } from './dto/user-response.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
-import { AuthenticateUserDto } from './dto/authenticate-user.dto';
-import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import {
   CurrentUser,
@@ -137,54 +133,5 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'Validation error' })
   findOne(@Param() { id }: ParamsIdDto): Promise<UserResponseDto> {
     return this.userService.findOne(id);
-  }
-
-  @Delete(':id')
-  @Auth()
-  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
-  @ApiOkResponse({
-    description: 'User deleted',
-    type: UserResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'User not found' })
-  @ApiBadRequestResponse({ description: 'Validation error' })
-  remove(@Param() { id }: ParamsIdDto): Promise<UserResponseDto> {
-    return this.userService.remove(id);
-  }
-
-  @Delete()
-  @Auth()
-  @ApiOkResponse({
-    description: 'All users deleted',
-  })
-  removeAll(): Promise<void> {
-    return this.userService.removeAll();
-  }
-
-  @Post('auth/authenticate')
-  @ApiOkResponse({
-    description: 'User authenticated',
-    type: UserResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid credentials' })
-  @ApiNotFoundResponse({ description: 'User not found' })
-  @HttpCode(HttpStatus.OK)
-  async authenticateUser(
-    @Body() authenticateUserDto: AuthenticateUserDto,
-  ): Promise<UserResponseDto> {
-    return this.userService.authenticateUser(authenticateUserDto);
-  }
-
-  @Post('auth/oauth')
-  @ApiOkResponse({
-    description: 'User found or created via OAuth',
-    type: UserResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid OAuth data' })
-  @HttpCode(HttpStatus.OK)
-  async handleOAuthLogin(
-    @Body() oauthLoginDto: OAuthLoginDto,
-  ): Promise<UserResponseDto> {
-    return this.userService.findOrCreateUserByOauth(oauthLoginDto);
   }
 }
